@@ -1,0 +1,5 @@
+{
+  "name": "RandoTrack",
+  "description": "Une application simple et élégante pour planifier et enregistrer vos randonnées avec visualisation sur carte.",
+  "requestFramePermissions": []
+}
