@@ -13,6 +13,12 @@ export interface HikeData {
   duration: string; // e.g., "2h 30m"
   startCoords?: Coordinates;
   endCoords?: Coordinates;
+  elevationProfile?: {
+    minElevation: number;
+    maxElevation: number;
+    totalAscent: number;
+    totalDescent: number;
+  };
 }
 
 export interface HikeFormData {
