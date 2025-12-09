@@ -3,11 +3,13 @@ import { Mountain, Map as MapIcon, List } from 'lucide-react';
 import { HikeForm } from './components/HikeForm';
 import { MapDisplay } from './components/MapDisplay';
 import { HikeList } from './components/HikeList';
+import { AuthButton } from './components/AuthButton';
 import { HikeData, HikeFormData, Coordinates } from './types';
 import { getCoordinates, getAddressFromCoordinates } from './services/geocodingService';
 import { getRoute, RouteData, formatDistance, formatDuration, calculateDistance, estimateWalkingDuration } from './services/routingService';
 import { calculateElevationProfile } from './services/elevationService';
 import { fetchHikes, createHike, updateHike, deleteHike } from './services/hikeService';
+import { supabase } from './lib/supabase';
 
 const App: React.FC = () => {
   // State for the list of saved hikes
@@ -39,7 +41,7 @@ const App: React.FC = () => {
   const [editingHikeId, setEditingHikeId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState<'start' | 'end' | null>(null);
 
-  // Charger les randonnées depuis Supabase au montage du composant
+  // Charger les randonnées depuis Supabase au montage du composant et lors des changements d'auth
   useEffect(() => {
     const loadHikes = async () => {
       setIsLoadingHikes(true);
@@ -48,13 +50,25 @@ const App: React.FC = () => {
         setHikes(loadedHikes);
       } catch (error) {
         console.error('Erreur lors du chargement des randonnées:', error);
-        alert('Impossible de charger les randonnées. Vérifiez votre connexion Supabase.');
+        // Ne pas afficher d'alerte si l'utilisateur n'est pas connecté
+        if ((error as Error).message !== 'Vous devez être connecté pour créer une randonnée') {
+          console.warn('Impossible de charger les randonnées. L\'utilisateur n\'est peut-être pas connecté.');
+        }
       } finally {
         setIsLoadingHikes(false);
       }
     };
 
     loadHikes();
+
+    // Écouter les changements d'authentification pour recharger les randonnées
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      loadHikes();
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   // Handle form input changes
@@ -421,13 +435,16 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-12">
       {/* Header */}
       <header className="bg-emerald-900 text-white shadow-lg sticky top-0 z-50">
-        <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Mountain className="w-8 h-8 text-emerald-300" />
             <h1 className="text-2xl font-bold tracking-tight">RandoTrack</h1>
           </div>
-          <div className="text-emerald-200 text-sm hidden sm:block">
-            Planifiez votre prochaine aventure
+          <div className="flex items-center gap-4">
+            <div className="text-emerald-200 text-sm hidden lg:block">
+              Planifiez votre prochaine aventure
+            </div>
+            <AuthButton />
           </div>
         </div>
       </header>

@@ -2,13 +2,21 @@ import { supabase, rowToHikeData, hikeDataToRow, HikeRow } from '../lib/supabase
 import { HikeData } from '../types';
 
 /**
- * Récupérer toutes les randonnées
+ * Récupérer toutes les randonnées de l'utilisateur connecté
  */
 export const fetchHikes = async (): Promise<HikeData[]> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      // Si pas d'utilisateur connecté, retourner un tableau vide
+      return [];
+    }
+
     const { data, error } = await supabase
       .from('hikes')
       .select('*')
+      .eq('user_id', user.id)
       .order('date', { ascending: false });
 
     if (error) {
@@ -28,11 +36,18 @@ export const fetchHikes = async (): Promise<HikeData[]> => {
  */
 export const createHike = async (hike: HikeData): Promise<HikeData | null> => {
   try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    if (!user) {
+      throw new Error('Vous devez être connecté pour créer une randonnée');
+    }
+
     const row = hikeDataToRow(hike);
+    const rowWithUserId = { ...row, user_id: user.id };
     
     const { data, error } = await supabase
       .from('hikes')
-      .insert([row])
+      .insert([rowWithUserId])
       .select()
       .single();
 

@@ -1,6 +1,7 @@
 import React from 'react';
 import { HikeData } from '../types';
 import { MapPin, Clock, Ruler, Calendar, Trash2, Edit2, Eye, TrendingUp, TrendingDown } from 'lucide-react';
+import { SocialShare } from './SocialShare';
 
 interface HikeListProps {
   hikes: HikeData[];
@@ -35,6 +36,7 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
               </div>
             </div>
             <div className="flex items-center gap-2 ml-2" onClick={(e) => e.stopPropagation()}>
+              <SocialShare hike={hike} />
               <button 
                 onClick={() => onEdit(hike)}
                 className="text-stone-400 hover:text-emerald-600 transition-colors p-1"
