@@ -1,20 +1,37 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# RandoTrack 🏔️
 
-# Run and deploy your AI Studio app
+RandoTrack est une application web simple et élégante pour planifier et enregistrer vos randonnées. Elle permet de visualiser des itinéraires sur une carte interactive et de conserver un historique de vos aventures.
 
-This contains everything you need to run your app locally.
+## Fonctionnalités
 
-View your app in AI Studio: https://ai.studio/apps/drive/18W5yJVwFjVsYHEz1Ce35yuS9G9-tvNME
+*   **Planification** : Saisissez un point de départ et d'arrivée.
+*   **Visualisation** : Carte interactive (OpenStreetMap / Leaflet) affichant l'itinéraire.
+*   **Géocodage** : Conversion automatique des adresses en coordonnées GPS via l'API Nominatim.
+*   **Historique** : Liste visuelle de vos randonnées passées.
+*   **Interface** : Design moderne et responsive avec Tailwind CSS.
 
-## Run Locally
+## Technologies utilisées
 
-**Prerequisites:**  Node.js
+*   React 19
+*   TypeScript
+*   Tailwind CSS
+*   Leaflet & React-Leaflet
+*   Lucide React (Icônes)
 
+## Installation et Lancement
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+1.  **Installer les dépendances** :
+    ```bash
+    npm install
+    ```
+
+2.  **Lancer le projet** :
+    ```bash
+    npm start
+    ```
+
+3.  Ouvrir le navigateur sur l'adresse indiquée (généralement `http://localhost:1234`).
+
+## Licence
+
+MIT
