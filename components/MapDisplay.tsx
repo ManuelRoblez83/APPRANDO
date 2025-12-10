@@ -171,47 +171,47 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
   }, [startCoords, endCoords, routeData]);
   
   return (
-    <div className="h-[500px] w-full rounded-2xl overflow-hidden shadow-sm border border-stone-200 relative bg-stone-100">
+    <div className="h-[500px] w-full rounded-2xl overflow-hidden shadow-sm border border-stone-200 dark:border-stone-700 relative bg-stone-100 dark:bg-stone-900">
       {/* Selection Mode Indicator */}
       {selectionMode && (
-        <div className="absolute top-4 left-4 z-[1000] bg-blue-500 text-white px-4 py-2 rounded-lg shadow-lg font-medium text-sm">
+        <div className="absolute top-4 left-4 z-[1000] bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg font-medium text-sm">
           {selectionMode === 'start' ? '📍 Cliquez sur la carte pour choisir le point de départ' : '📍 Cliquez sur la carte pour choisir le point d\'arrivée'}
         </div>
       )}
       
       {/* Route Info Overlay - Compact en haut à droite avec détails du dénivelé */}
       {routeData && (
-        <div className="absolute top-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-lg p-2.5 shadow-lg border border-emerald-200 max-w-[320px]">
+        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-sm rounded-lg p-2.5 shadow-lg border border-emerald-200 dark:border-emerald-800 max-w-[320px]">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-emerald-600 text-[10px] font-semibold">🚶 Itinéraire pédestre</span>
+            <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">🚶 Itinéraire pédestre</span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs mb-2">
             <div>
-              <span className="text-stone-500 text-[10px]">Distance</span>
-              <p className="font-semibold text-emerald-700 text-sm leading-tight">{formatDistance(routeData.distance)}</p>
+              <span className="text-stone-500 dark:text-stone-400 text-[10px]">Distance</span>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">{formatDistance(routeData.distance)}</p>
             </div>
             <div>
-              <span className="text-stone-500 text-[10px]">Durée (à pied)</span>
-              <p className="font-semibold text-emerald-700 text-sm leading-tight">{formatDuration(routeData.duration)}</p>
+              <span className="text-stone-500 dark:text-stone-400 text-[10px]">Durée (à pied)</span>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">{formatDuration(routeData.duration)}</p>
             </div>
           </div>
           {routeData.elevationProfile && (
-            <div className="border-t border-emerald-100 pt-2 mt-2">
+            <div className="border-t border-emerald-100 dark:border-emerald-800 pt-2 mt-2">
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div>
-                  <span className="text-stone-500 text-[10px]">Dénivelé +</span>
-                  <p className="font-semibold text-emerald-700 text-sm leading-tight">
+                  <span className="text-stone-500 dark:text-stone-400 text-[10px]">Dénivelé +</span>
+                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
                     {formatElevation(routeData.elevationProfile.totalAscent)}
                   </p>
                 </div>
                 <div>
-                  <span className="text-stone-500 text-[10px]">Dénivelé -</span>
-                  <p className="font-semibold text-emerald-700 text-sm leading-tight">
+                  <span className="text-stone-500 dark:text-stone-400 text-[10px]">Dénivelé -</span>
+                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
                     {formatElevation(routeData.elevationProfile.totalDescent)}
                   </p>
                 </div>
                 <div className="col-span-2 pt-1">
-                  <div className="flex items-center justify-between text-[10px] text-stone-600">
+                  <div className="flex items-center justify-between text-[10px] text-stone-600 dark:text-stone-400">
                     <span>Altitude min: {formatElevation(routeData.elevationProfile.minElevation)}</span>
                     <span>Alt. max: {formatElevation(routeData.elevationProfile.maxElevation)}</span>
                   </div>
@@ -223,8 +223,8 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
       )}
       
       {isRouteLoading && (
-        <div className="absolute top-4 left-4 right-4 z-[1000] bg-white/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-stone-200">
-          <div className="flex items-center gap-2 text-sm text-stone-600">
+        <div className="absolute top-4 left-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-stone-200 dark:border-stone-700">
+          <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
             <span className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-500 border-t-transparent"></span>
             Calcul de l'itinéraire pédestre...
           </div>
@@ -258,9 +258,9 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
           <Marker position={[startCoords.lat, startCoords.lng]} icon={startIcon}>
             <Popup>
               <div className="space-y-1">
-                <div className="font-bold text-emerald-700">📍 Départ</div>
-                <div className="text-sm">{startName}</div>
-                <div className="text-xs text-stone-500">
+                <div className="font-bold text-emerald-700 dark:text-emerald-400">📍 Départ</div>
+                <div className="text-sm text-stone-800 dark:text-stone-200">{startName}</div>
+                <div className="text-xs text-stone-500 dark:text-stone-400">
                   {startCoords.lat.toFixed(6)}, {startCoords.lng.toFixed(6)}
                 </div>
               </div>
@@ -272,18 +272,18 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
           <Marker position={[endCoords.lat, endCoords.lng]} icon={endIcon}>
             <Popup>
               <div className="space-y-1">
-                <div className="font-bold text-red-700">🎯 Arrivée</div>
-                <div className="text-sm">{endName}</div>
-                <div className="text-xs text-stone-500">
+                <div className="font-bold text-red-700 dark:text-red-400">🎯 Arrivée</div>
+                <div className="text-sm text-stone-800 dark:text-stone-200">{endName}</div>
+                <div className="text-xs text-stone-500 dark:text-stone-400">
                   {endCoords.lat.toFixed(6)}, {endCoords.lng.toFixed(6)}
                 </div>
                 {routeData && (
                   <>
-                    <div className="border-t border-stone-200 mt-2 pt-2">
-                      <div className="text-xs text-stone-600">
+                    <div className="border-t border-stone-200 dark:border-stone-700 mt-2 pt-2">
+                      <div className="text-xs text-stone-600 dark:text-stone-400">
                         <strong>Distance:</strong> {formatDistance(routeData.distance)}
                       </div>
-                      <div className="text-xs text-stone-600">
+                      <div className="text-xs text-stone-600 dark:text-stone-400">
                         <strong>Durée:</strong> {formatDuration(routeData.duration)}
                       </div>
                     </div>

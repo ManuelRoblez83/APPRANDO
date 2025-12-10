@@ -67,4 +67,33 @@ export const onAuthStateChange = (callback: (user: User | null) => void) => {
   });
 };
 
+// Changer le mot de passe
+export const updatePassword = async (newPassword: string): Promise<{ error: string | null }> => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error: any) {
+    return { error: error.message || 'Erreur lors de la modification du mot de passe' };
+  }
+};
+
+// Mettre à jour l'email
+export const updateEmail = async (newEmail: string): Promise<{ error: string | null }> => {
+  try {
+    const { error } = await supabase.auth.updateUser({
+      email: newEmail,
+    });
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error: any) {
+    return { error: error.message || 'Erreur lors de la modification de l\'email' };
+  }
+};
+
+
 

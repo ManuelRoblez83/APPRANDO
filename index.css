@@ -2,6 +2,11 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Force dark mode styles to be included */
+.dark {
+  color-scheme: dark;
+}
+
 /* Fix for leaflet map display */
 .leaflet-container {
   width: 100%;
@@ -44,8 +49,17 @@
   background-color: #ffffff !important;
 }
 
+.dark .auth-input {
+  color: #f5f5f4 !important;
+  background-color: #292524 !important;
+}
+
 .auth-input::placeholder {
   color: #9ca3af !important;
   opacity: 1;
+}
+
+.dark .auth-input::placeholder {
+  color: #78716c !important;
 }
 

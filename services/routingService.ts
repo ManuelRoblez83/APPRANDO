@@ -79,6 +79,15 @@ export const getRoute = async (
   end: Coordinates
 ): Promise<RouteData | null> => {
   try {
+    // Vérifier si les coordonnées de départ et d'arrivée sont identiques (ou très proches)
+    const distanceBetweenPoints = calculateDistance(start, end);
+    if (distanceBetweenPoints < 10) {
+      console.warn('Les points de départ et d\'arrivée sont trop proches ou identiques');
+      // Pour un tour complet (comme un lac), on peut ajouter un petit décalage
+      // mais ici on retourne null car OSRM ne peut pas calculer un itinéraire
+      return null;
+    }
+
     // OSRM routing API - using walking profile for pedestrian routes only
     // Enhanced precision with full geometry and detailed steps
     // overview=full: maximum geometry precision with all route points

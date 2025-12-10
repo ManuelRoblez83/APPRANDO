@@ -147,3 +147,4 @@ git remote -v
 **Note** : Avec Vercel, chaque push sur `main` déclenche automatiquement un nouveau déploiement. C'est la méthode la plus simple pour mettre à jour votre application en production ! 🚀
 
 
+

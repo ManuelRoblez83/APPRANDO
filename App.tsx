@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mountain, Map as MapIcon, List } from 'lucide-react';
+import { HomePage } from './components/HomePage';
+import { UserProfile } from './components/UserProfile';
 import { HikeForm } from './components/HikeForm';
 import { MapDisplay } from './components/MapDisplay';
 import { HikeList } from './components/HikeList';
 import { AuthButton } from './components/AuthButton';
+import { ThemeToggle } from './components/ThemeToggle';
 import { HikeData, HikeFormData, Coordinates } from './types';
 import { getCoordinates, getAddressFromCoordinates } from './services/geocodingService';
 import { getRoute, RouteData, formatDistance, formatDuration, calculateDistance, estimateWalkingDuration } from './services/routingService';
@@ -12,6 +15,10 @@ import { fetchHikes, createHike, updateHike, deleteHike } from './services/hikeS
 import { supabase } from './lib/supabase';
 
 const App: React.FC = () => {
+  // État pour afficher la page d'accueil ou l'application principale
+  const [showHomePage, setShowHomePage] = useState(true);
+  const [showUserProfile, setShowUserProfile] = useState(false);
+  const [refreshProfileKey, setRefreshProfileKey] = useState(0);
   // State for the list of saved hikes
   const [hikes, setHikes] = useState<HikeData[]>([]);
   const [isLoadingHikes, setIsLoadingHikes] = useState(true);
@@ -431,20 +438,45 @@ const App: React.FC = () => {
     setIsFormValidForSave(false);
   };
 
+  // Afficher la page d'accueil si showHomePage est true
+  if (showHomePage) {
+    return <HomePage onEnterApp={() => setShowHomePage(false)} />;
+  }
+
+  // Afficher la page de profil si showUserProfile est true
+  if (showUserProfile) {
+    return (
+      <UserProfile
+        onBack={() => {
+          setShowUserProfile(false);
+          // Rafraîchir la photo de profil après retour du profil
+          setRefreshProfileKey((prev) => prev + 1);
+        }}
+      />
+    );
+  }
+
   return (
-    <div className="min-h-screen pb-12">
+    <div className="min-h-screen pb-12 bg-stone-50 dark:bg-stone-900 transition-colors">
       {/* Header */}
-      <header className="bg-emerald-900 text-white shadow-lg sticky top-0 z-50">
+      <header className="bg-emerald-900 dark:bg-stone-800 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Mountain className="w-8 h-8 text-emerald-300" />
+          <button
+            onClick={() => setShowHomePage(true)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <Mountain className="w-8 h-8 text-emerald-300 dark:text-emerald-400" />
             <h1 className="text-2xl font-bold tracking-tight">RandoTrack</h1>
-          </div>
+          </button>
           <div className="flex items-center gap-4">
-            <div className="text-emerald-200 text-sm hidden lg:block">
+            <div className="text-emerald-200 dark:text-stone-300 text-sm hidden lg:block">
               Planifiez votre prochaine aventure
             </div>
-            <AuthButton />
+            <ThemeToggle />
+            <AuthButton 
+              onShowProfile={() => setShowUserProfile(true)}
+              refreshProfilePicture={refreshProfileKey}
+            />
           </div>
         </div>
       </header>
@@ -466,6 +498,8 @@ const App: React.FC = () => {
               isEditing={!!editingHikeId}
               onSelectOnMap={setSelectionMode}
               selectionMode={selectionMode}
+              existingHikes={hikes}
+              onLoadHike={handleEdit}
             />
             
             <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-sm text-emerald-800">
@@ -499,18 +533,18 @@ const App: React.FC = () => {
         </div>
 
         {/* Bottom Section: List */}
-        <div className="pt-8 border-t border-stone-200">
-          <h2 className="text-2xl font-bold text-stone-800 mb-6 flex items-center gap-2">
+        <div className="pt-8 border-t border-stone-200 dark:border-stone-700">
+          <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-6 flex items-center gap-2">
             <List className="w-6 h-6" />
             Vos Randonnées Enregistrées
             {isLoadingHikes && (
-              <span className="text-sm text-stone-500 ml-2">(Chargement...)</span>
+              <span className="text-sm text-stone-500 dark:text-stone-400 ml-2">(Chargement...)</span>
             )}
           </h2>
           {isLoadingHikes ? (
-            <div className="text-center py-10 bg-white rounded-2xl border border-dashed border-stone-300">
+            <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
               <span className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent inline-block"></span>
-              <p className="text-stone-400 mt-2">Chargement des randonnées...</p>
+              <p className="text-stone-400 dark:text-stone-500 mt-2">Chargement des randonnées...</p>
             </div>
           ) : (
             <HikeList 

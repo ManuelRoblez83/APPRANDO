@@ -191,14 +191,14 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full p-2 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition pr-8"
+          className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition pr-8 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
           autoComplete="off"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2">
           {isLoading ? (
-            <Loader className="w-4 h-4 text-stone-400 animate-spin" />
+            <Loader className="w-4 h-4 text-stone-400 dark:text-stone-500 animate-spin" />
           ) : (
-            icon || <MapPin className="w-4 h-4 text-stone-400" />
+            icon || <MapPin className="w-4 h-4 text-stone-400 dark:text-stone-500" />
           )}
         </div>
       </div>
@@ -207,7 +207,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-white border border-stone-200 rounded-lg shadow-xl max-h-80 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl max-h-80 overflow-y-auto"
           style={{ minWidth: '100%', maxWidth: '100%' }}
         >
           {suggestions.map((suggestion, index) => {
@@ -225,24 +225,24 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
                   // Prevent input from losing focus when clicking on suggestion
                   e.preventDefault();
                 }}
-                className={`w-full text-left px-4 py-4 hover:bg-emerald-50 transition-colors border-b border-stone-100 last:border-b-0 ${
-                  index === selectedIndex ? 'bg-emerald-50' : ''
+                className={`w-full text-left px-4 py-4 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors border-b border-stone-100 dark:border-stone-700 last:border-b-0 ${
+                  index === selectedIndex ? 'bg-emerald-50 dark:bg-emerald-900/20' : ''
                 }`}
               >
                 <div className="flex items-start gap-3">
-                  <MapPin className="w-5 h-5 text-emerald-600 mt-0.5 flex-shrink-0" />
+                  <MapPin className="w-5 h-5 text-emerald-600 dark:text-emerald-400 mt-0.5 flex-shrink-0" />
                   <div className="flex-1 break-words overflow-wrap-anywhere">
                     {parts.secondary ? (
                       <>
-                        <div className="font-semibold text-stone-900 text-base leading-tight mb-1">
+                        <div className="font-semibold text-stone-900 dark:text-stone-100 text-base leading-tight mb-1">
                           {parts.primary}
                         </div>
-                        <div className="text-sm text-stone-600 leading-relaxed whitespace-normal">
+                        <div className="text-sm text-stone-600 dark:text-stone-400 leading-relaxed whitespace-normal">
                           {parts.secondary}
                         </div>
                       </>
                     ) : (
-                      <div className="font-medium text-stone-800 text-sm leading-relaxed whitespace-normal">
+                      <div className="font-medium text-stone-800 dark:text-stone-200 text-sm leading-relaxed whitespace-normal">
                         {parts.primary}
                       </div>
                     )}
