@@ -168,8 +168,9 @@ export const AuthButton: React.FC = () => {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
+                  className="auth-input w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
                   placeholder="votre@email.com"
+                  style={{ color: '#000000', backgroundColor: '#ffffff' }}
                 />
               </div>
 
@@ -183,8 +184,9 @@ export const AuthButton: React.FC = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
+                  className="auth-input w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition"
                   placeholder="••••••••"
+                  style={{ color: '#000000', backgroundColor: '#ffffff' }}
                 />
                 {isSignUp && (
                   <p className="text-xs text-stone-500 mt-1">

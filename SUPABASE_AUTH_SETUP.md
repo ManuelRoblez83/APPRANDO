@@ -48,3 +48,4 @@ Une fois le schéma mis à jour :
 
 Ou simplement créer de nouvelles randonnées après vous être connecté.
 
+

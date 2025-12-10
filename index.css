@@ -38,3 +38,14 @@
   border: none !important;
 }
 
+/* Force text color in auth form inputs */
+.auth-input {
+  color: #000000 !important;
+  background-color: #ffffff !important;
+}
+
+.auth-input::placeholder {
+  color: #9ca3af !important;
+  opacity: 1;
+}
+
