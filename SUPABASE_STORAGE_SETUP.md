@@ -50,3 +50,5 @@ Une fois configuré, les utilisateurs peuvent :
 - Formats acceptés : JPG, PNG, WebP
 - Si un utilisateur n'a pas de photo, une photo par défaut avec ses initiales est générée automatiquement
 
+
+

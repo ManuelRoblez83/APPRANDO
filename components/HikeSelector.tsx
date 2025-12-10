@@ -95,7 +95,7 @@ export const HikeSelector: React.FC<HikeSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-medium"
+        className="w-full px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-3xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-medium"
       >
         <span className="flex items-center gap-2">
           <MapPin className="w-4 h-4" />
@@ -105,7 +105,7 @@ export const HikeSelector: React.FC<HikeSelectorProps> = ({
       </button>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-stone-800 rounded-lg shadow-lg border border-stone-200 dark:border-stone-700 max-h-96 overflow-hidden">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-stone-800 rounded-3xl shadow-lg border border-stone-200 dark:border-stone-700 max-h-96 overflow-hidden">
           {/* Barre de recherche dans le menu */}
           <div className="p-3 border-b border-stone-200 dark:border-stone-700 bg-stone-50 dark:bg-stone-750">
             <div className="relative">
@@ -115,7 +115,7 @@ export const HikeSelector: React.FC<HikeSelectorProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher..."
-                className="w-full pl-9 pr-3 py-2 border border-stone-300 dark:border-stone-600 rounded-md focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+                className="w-full pl-9 pr-3 py-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
                 style={{ color: '#1c1917', backgroundColor: '#ffffff' }}
                 onClick={(e) => e.stopPropagation()}
               />

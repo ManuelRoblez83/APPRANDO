@@ -13,7 +13,10 @@ import {
   CheckCircle,
   X,
   Trash2,
-  Camera
+  Camera,
+  Heart,
+  UserCircle,
+  Calendar as CalendarIcon
 } from 'lucide-react';
 import { getCurrentUser, updatePassword, updateEmail, signOut, User as SupabaseUser } from '../services/authService';
 import { calculateUserStatistics, UserStatistics } from '../services/userStatsService';
@@ -25,6 +28,14 @@ import {
   generateDefaultAvatar,
   deleteProfilePicture 
 } from '../services/profileService';
+import {
+  getUserProfile,
+  upsertUserProfile,
+  getFavoriteHikes,
+  addFavoriteHike,
+  removeFavoriteHike,
+  UserProfile as UserProfileData
+} from '../services/userProfileService';
 
 interface UserProfileProps {
   onBack: () => void;
@@ -34,12 +45,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [stats, setStats] = useState<UserStatistics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'statistics'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'password' | 'statistics' | 'favorites'>('profile');
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
   const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
   const [photoError, setPhotoError] = useState('');
   const [photoSuccess, setPhotoSuccess] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // États pour les informations personnelles
+  const [userProfile, setUserProfile] = useState<UserProfileData | null>(null);
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [birthDate, setBirthDate] = useState('');
+  const [nickname, setNickname] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [profileSuccess, setProfileSuccess] = useState(false);
 
   // États pour la modification du profil
   const [newEmail, setNewEmail] = useState('');
@@ -53,6 +73,10 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState(false);
 
+  // États pour les randonnées favorites
+  const [allHikes, setAllHikes] = useState<HikeData[]>([]);
+  const [favoriteHikeIds, setFavoriteHikeIds] = useState<string[]>([]);
+
   // Charger les données utilisateur
   useEffect(() => {
     const loadUserData = async () => {
@@ -62,12 +86,70 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
         setUser(currentUser);
         if (currentUser) {
           setNewEmail(currentUser.email || '');
-          const userStats = await calculateUserStatistics();
-          setStats(userStats);
           
-          // Charger la photo de profil
-          const profileUrl = await getProfilePictureUrl(currentUser.id);
-          setProfilePictureUrl(profileUrl);
+          try {
+            const userStats = await calculateUserStatistics();
+            setStats(userStats);
+          } catch (error) {
+            console.error('Erreur lors du chargement des statistiques:', error);
+          }
+          
+          try {
+            // Charger la photo de profil
+            const profileUrl = await getProfilePictureUrl(currentUser.id);
+            setProfilePictureUrl(profileUrl);
+          } catch (error) {
+            console.error('Erreur lors du chargement de la photo:', error);
+          }
+
+          try {
+            // Charger les informations personnelles
+            const { profile, error: profileErr } = await getUserProfile(currentUser.id);
+            if (profileErr) {
+              // Si la table n'existe pas encore, on ignore l'erreur
+              if (!profileErr.includes('does not exist') && !profileErr.includes('relation') && !profileErr.includes('PGRST')) {
+                console.error('Erreur lors du chargement du profil:', profileErr);
+              }
+            } else if (profile) {
+              setUserProfile(profile);
+              setFirstName(profile.first_name || '');
+              setLastName(profile.last_name || '');
+              setBirthDate(profile.birth_date || '');
+              setNickname(profile.nickname || '');
+            }
+          } catch (error: any) {
+            // Ignorer les erreurs si les tables n'existent pas encore
+            const errorMsg = error?.message || String(error);
+            if (!errorMsg.includes('does not exist') && !errorMsg.includes('relation')) {
+              console.error('Erreur lors du chargement du profil:', error);
+            }
+          }
+
+          try {
+            // Charger les randonnées et les favoris
+            const hikes = await fetchHikes();
+            setAllHikes(hikes);
+            
+            try {
+              const { hikeIds, error: favoritesError } = await getFavoriteHikes(currentUser.id);
+              if (favoritesError) {
+                // Si la table n'existe pas encore, on ignore l'erreur
+                if (!favoritesError.includes('does not exist') && !favoritesError.includes('relation')) {
+                  console.error('Erreur lors du chargement des favoris:', favoritesError);
+                }
+              } else {
+                setFavoriteHikeIds(hikeIds);
+              }
+            } catch (error: any) {
+              // Ignorer les erreurs si la table n'existe pas encore
+              const errorMsg = error?.message || String(error);
+              if (!errorMsg.includes('does not exist') && !errorMsg.includes('relation')) {
+                console.error('Erreur lors du chargement des favoris:', error);
+              }
+            }
+          } catch (error) {
+            console.error('Erreur lors du chargement des randonnées:', error);
+          }
         }
       } catch (error) {
         console.error('Erreur lors du chargement des données:', error);
@@ -175,12 +257,53 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
     }
   };
 
+  const handleUpdateProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user?.id) return;
+
+    setProfileError('');
+    setProfileSuccess(false);
+
+    const { profile, error } = await upsertUserProfile(user.id, {
+      first_name: firstName.trim() || null,
+      last_name: lastName.trim() || null,
+      birth_date: birthDate || null,
+      nickname: nickname.trim() || null,
+    });
+
+    if (error) {
+      setProfileError(error);
+    } else if (profile) {
+      setUserProfile(profile);
+      setProfileSuccess(true);
+      setTimeout(() => setProfileSuccess(false), 3000);
+    }
+  };
+
+  const handleToggleFavorite = async (hikeId: string) => {
+    if (!user?.id) return;
+
+    const isFavorite = favoriteHikeIds.includes(hikeId);
+    
+    if (isFavorite) {
+      const { error } = await removeFavoriteHike(user.id, hikeId);
+      if (!error) {
+        setFavoriteHikeIds(prev => prev.filter(id => id !== hikeId));
+      }
+    } else {
+      const { error } = await addFavoriteHike(user.id, hikeId);
+      if (!error) {
+        setFavoriteHikeIds(prev => [...prev, hikeId]);
+      }
+    }
+  };
+
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center">
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-2 border-emerald-500 border-t-transparent mx-auto"></div>
-          <p className="text-stone-600 mt-4">Chargement de votre profil...</p>
+          <p className="text-stone-600 dark:text-stone-400 mt-4">Chargement de votre profil...</p>
         </div>
       </div>
     );
@@ -188,14 +311,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-stone-50 flex items-center justify-center px-4">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-lg max-w-md w-full">
+      <div className="min-h-screen bg-stone-50 dark:bg-stone-900 flex items-center justify-center px-4">
+        <div className="text-center bg-white dark:bg-stone-800 p-8 rounded-3xl shadow-lg max-w-md w-full">
           <AlertCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-stone-800 mb-2">Accès non autorisé</h2>
-          <p className="text-stone-600 mb-6">Vous devez être connecté pour accéder à votre profil.</p>
+          <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-2">Accès non autorisé</h2>
+          <p className="text-stone-600 dark:text-stone-400 mb-6">Vous devez être connecté pour accéder à votre profil.</p>
           <button
             onClick={onBack}
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-3xl transition-colors"
           >
             Retour
           </button>
@@ -205,7 +328,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   }
 
   return (
-    <div className="min-h-screen bg-stone-50 pb-12">
+    <div className="min-h-screen bg-stone-50 dark:bg-stone-900 pb-12">
       {/* Header */}
       <header className="bg-emerald-900 text-white shadow-lg sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -223,7 +346,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
 
       <main className="max-w-5xl mx-auto px-4 py-8">
         {/* En-tête du profil */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+        <div className="bg-white dark:bg-stone-800 rounded-3xl shadow-lg p-6 mb-6">
           <div className="flex items-center gap-4">
             <div className="relative">
               {profilePictureUrl ? (
@@ -260,22 +383,29 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
               />
             </div>
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-stone-800">Mon Profil</h2>
-              <p className="text-stone-600">{user.email}</p>
-              <p className="text-sm text-stone-500 mt-1">
+              <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100">
+                {userProfile?.nickname || userProfile?.first_name || 'Mon Profil'}
+              </h2>
+              {(userProfile?.first_name || userProfile?.last_name) && (
+                <p className="text-stone-600 dark:text-stone-400">
+                  {[userProfile.first_name, userProfile.last_name].filter(Boolean).join(' ')}
+                </p>
+              )}
+              <p className="text-stone-600 dark:text-stone-400">{user.email}</p>
+              <p className="text-sm text-stone-500 dark:text-stone-500 mt-1">
                 Membre depuis {new Date(user.created_at).toLocaleDateString('fr-FR', {
                   year: 'numeric',
                   month: 'long',
                 })}
               </p>
               {photoError && (
-                <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-lg text-xs flex items-center gap-2">
+                <div className="mt-2 bg-red-50 border border-red-200 text-red-700 px-3 py-2 rounded-3xl text-xs flex items-center gap-2">
                   <AlertCircle className="w-3 h-3" />
                   {photoError}
                 </div>
               )}
               {photoSuccess && (
-                <div className="mt-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-lg text-xs flex items-center gap-2">
+                <div className="mt-2 bg-green-50 border border-green-200 text-green-700 px-3 py-2 rounded-3xl text-xs flex items-center gap-2">
                   <CheckCircle className="w-3 h-3" />
                   Photo de profil mise à jour !
                 </div>
@@ -295,14 +425,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
         </div>
 
         {/* Navigation par onglets */}
-        <div className="bg-white rounded-2xl shadow-lg mb-6">
-          <div className="flex border-b border-stone-200">
+        <div className="bg-white dark:bg-stone-800 rounded-3xl shadow-lg mb-6">
+          <div className="flex border-b border-stone-200 dark:border-stone-700">
             <button
               onClick={() => setActiveTab('profile')}
               className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
                 activeTab === 'profile'
-                  ? 'text-emerald-700 border-b-2 border-emerald-700'
-                  : 'text-stone-600 hover:text-stone-800'
+                  ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
               }`}
             >
               <User className="w-5 h-5 inline-block mr-2" />
@@ -312,8 +442,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
               onClick={() => setActiveTab('password')}
               className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
                 activeTab === 'password'
-                  ? 'text-emerald-700 border-b-2 border-emerald-700'
-                  : 'text-stone-600 hover:text-stone-800'
+                  ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
               }`}
             >
               <Lock className="w-5 h-5 inline-block mr-2" />
@@ -323,12 +453,23 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
               onClick={() => setActiveTab('statistics')}
               className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
                 activeTab === 'statistics'
-                  ? 'text-emerald-700 border-b-2 border-emerald-700'
-                  : 'text-stone-600 hover:text-stone-800'
+                  ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
               }`}
             >
               <TrendingUp className="w-5 h-5 inline-block mr-2" />
               Statistiques
+            </button>
+            <button
+              onClick={() => setActiveTab('favorites')}
+              className={`flex-1 px-6 py-4 text-center font-medium transition-colors ${
+                activeTab === 'favorites'
+                  ? 'text-emerald-700 dark:text-emerald-400 border-b-2 border-emerald-700 dark:border-emerald-400'
+                  : 'text-stone-600 dark:text-stone-400 hover:text-stone-800 dark:hover:text-stone-200'
+              }`}
+            >
+              <Heart className="w-5 h-5 inline-block mr-2" />
+              Favoris
             </button>
           </div>
 
@@ -337,14 +478,98 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             {/* Onglet Profil */}
             {activeTab === 'profile' && (
               <div className="space-y-6">
+                {/* Informations personnelles */}
                 <div>
-                  <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
+                    <UserCircle className="w-5 h-5" />
+                    Informations personnelles
+                  </h3>
+                  <form onSubmit={handleUpdateProfile} className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                          Prénom
+                        </label>
+                        <input
+                          type="text"
+                          value={firstName}
+                          onChange={(e) => setFirstName(e.target.value)}
+                          className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+                          placeholder="Votre prénom"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                          Nom
+                        </label>
+                        <input
+                          type="text"
+                          value={lastName}
+                          onChange={(e) => setLastName(e.target.value)}
+                          className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+                          placeholder="Votre nom"
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="flex flex-col">
+                        <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2 flex items-center gap-2">
+                          <CalendarIcon className="w-4 h-4" />
+                          Date de naissance
+                        </label>
+                        <input
+                          type="date"
+                          value={birthDate}
+                          onChange={(e) => setBirthDate(e.target.value)}
+                          className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+                        />
+                      </div>
+                      <div className="flex flex-col">
+                        <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
+                          Pseudonyme
+                        </label>
+                        <input
+                          type="text"
+                          value={nickname}
+                          onChange={(e) => setNickname(e.target.value)}
+                          className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+                          placeholder="Votre pseudonyme"
+                        />
+                      </div>
+                    </div>
+                    {profileError && (
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm flex items-center gap-2">
+                        <AlertCircle className="w-4 h-4" />
+                        {profileError}
+                      </div>
+                    )}
+                    {profileSuccess && (
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-3xl text-sm flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4" />
+                        Profil mis à jour avec succès !
+                      </div>
+                    )}
+                    <button
+                      type="submit"
+                      className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-3xl transition-colors"
+                    >
+                      Enregistrer les informations
+                    </button>
+                  </form>
+                </div>
+
+                {/* Séparateur */}
+                <div className="border-t border-stone-200 dark:border-stone-700"></div>
+
+                {/* Modification de l'email */}
+                <div>
+                  <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
                     <Mail className="w-5 h-5" />
                     Modifier l'email
                   </h3>
                   <form onSubmit={handleUpdateEmail} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-2">
+                      <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
                         Nouvelle adresse email
                       </label>
                       <input
@@ -355,26 +580,26 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                           setEmailError('');
                           setEmailSuccess(false);
                         }}
-                        className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition auth-input"
+                        className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition auth-input bg-white dark:bg-stone-700"
                         style={{ color: '#000000', backgroundColor: '#ffffff' }}
                         placeholder="nouveau@email.com"
                       />
                     </div>
                     {emailError && (
-                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {emailError}
                       </div>
                     )}
                     {emailSuccess && (
-                      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-3xl text-sm flex items-center gap-2">
                         <CheckCircle className="w-4 h-4" />
                         Email modifié avec succès !
                       </div>
                     )}
                     <button
                       type="submit"
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white font-semibold px-6 py-3 rounded-lg transition-colors"
+                      className="bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold px-6 py-3 rounded-3xl transition-colors"
                     >
                       Enregistrer
                     </button>
@@ -387,13 +612,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             {activeTab === 'password' && (
               <div className="space-y-6">
                 <div>
-                  <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
                     <Lock className="w-5 h-5" />
                     Changer le mot de passe
                   </h3>
                   <form onSubmit={handleUpdatePassword} className="space-y-4">
                     <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-2">
+                      <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
                         Nouveau mot de passe
                       </label>
                       <input
@@ -404,15 +629,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                           setPasswordError('');
                           setPasswordSuccess(false);
                         }}
-                        className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition auth-input"
+                        className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition auth-input bg-white dark:bg-stone-700"
                         style={{ color: '#000000', backgroundColor: '#ffffff' }}
                         placeholder="••••••••"
                         minLength={6}
                       />
-                      <p className="text-xs text-stone-500 mt-1">Minimum 6 caractères</p>
+                      <p className="text-xs text-stone-500 dark:text-stone-400 mt-1">Minimum 6 caractères</p>
                     </div>
                     <div>
-                      <label className="block text-sm font-semibold text-stone-700 mb-2">
+                      <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-2">
                         Confirmer le nouveau mot de passe
                       </label>
                       <input
@@ -423,20 +648,20 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                           setPasswordError('');
                           setPasswordSuccess(false);
                         }}
-                        className="w-full p-3 border border-stone-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition auth-input"
+                        className="w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition auth-input bg-white dark:bg-stone-700"
                         style={{ color: '#000000', backgroundColor: '#ffffff' }}
                         placeholder="••••••••"
                         minLength={6}
                       />
                     </div>
                     {passwordError && (
-                      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                      <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm flex items-center gap-2">
                         <AlertCircle className="w-4 h-4" />
                         {passwordError}
                       </div>
                     )}
                     {passwordSuccess && (
-                      <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm flex items-center gap-2">
+                      <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 text-green-700 dark:text-green-400 px-4 py-3 rounded-3xl text-sm flex items-center gap-2">
                         <CheckCircle className="w-4 h-4" />
                         Mot de passe modifié avec succès !
                       </div>
@@ -455,14 +680,14 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
             {/* Onglet Statistiques */}
             {activeTab === 'statistics' && stats && (
               <div className="space-y-6">
-                <h3 className="text-xl font-bold text-stone-800 mb-4 flex items-center gap-2">
+                <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
                   <TrendingUp className="w-5 h-5" />
                   Mes Statistiques
                 </h3>
 
                 {/* Cartes de statistiques */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-emerald-50 rounded-xl p-6 border border-emerald-200">
+                  <div className="bg-emerald-50 rounded-3xl p-6 border border-emerald-200">
                     <div className="flex items-center gap-3 mb-2">
                       <Route className="w-6 h-6 text-emerald-700" />
                       <h4 className="text-sm font-semibold text-emerald-800">Randonnées</h4>
@@ -470,7 +695,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                     <p className="text-3xl font-bold text-emerald-900">{stats.totalHikes}</p>
                   </div>
 
-                  <div className="bg-blue-50 rounded-xl p-6 border border-blue-200">
+                  <div className="bg-blue-50 rounded-3xl p-6 border border-blue-200">
                     <div className="flex items-center gap-3 mb-2">
                       <MapPin className="w-6 h-6 text-blue-700" />
                       <h4 className="text-sm font-semibold text-blue-800">Distance totale</h4>
@@ -478,7 +703,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                     <p className="text-3xl font-bold text-blue-900">{stats.totalDistance} km</p>
                   </div>
 
-                  <div className="bg-orange-50 rounded-xl p-6 border border-orange-200">
+                  <div className="bg-orange-50 rounded-3xl p-6 border border-orange-200">
                     <div className="flex items-center gap-3 mb-2">
                       <Mountain className="w-6 h-6 text-orange-700" />
                       <h4 className="text-sm font-semibold text-orange-800">Dénivelé +</h4>
@@ -488,7 +713,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                     </p>
                   </div>
 
-                  <div className="bg-purple-50 rounded-xl p-6 border border-purple-200">
+                  <div className="bg-purple-50 rounded-3xl p-6 border border-purple-200">
                     <div className="flex items-center gap-3 mb-2">
                       <Mountain className="w-6 h-6 text-purple-700" />
                       <h4 className="text-sm font-semibold text-purple-800">Dénivelé -</h4>
@@ -501,16 +726,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
 
                 {/* Statistiques supplémentaires */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="bg-stone-50 rounded-xl p-6 border border-stone-200">
-                    <h4 className="font-semibold text-stone-800 mb-2">Distance moyenne</h4>
-                    <p className="text-2xl font-bold text-stone-900">{stats.averageDistance} km</p>
+                  <div className="bg-stone-50 dark:bg-stone-700 rounded-3xl p-6 border border-stone-200 dark:border-stone-600">
+                    <h4 className="font-semibold text-stone-800 dark:text-stone-200 mb-2">Distance moyenne</h4>
+                    <p className="text-2xl font-bold text-stone-900 dark:text-stone-100">{stats.averageDistance} km</p>
                   </div>
 
                   {stats.longestHike && (
-                    <div className="bg-stone-50 rounded-xl p-6 border border-stone-200">
-                      <h4 className="font-semibold text-stone-800 mb-2">Plus longue randonnée</h4>
-                      <p className="text-xl font-bold text-stone-900">{stats.longestHike.name}</p>
-                      <p className="text-sm text-stone-600">{stats.longestHike.distance} km</p>
+                    <div className="bg-stone-50 dark:bg-stone-700 rounded-3xl p-6 border border-stone-200 dark:border-stone-600">
+                      <h4 className="font-semibold text-stone-800 dark:text-stone-200 mb-2">Plus longue randonnée</h4>
+                      <p className="text-xl font-bold text-stone-900 dark:text-stone-100">{stats.longestHike.name}</p>
+                      <p className="text-sm text-stone-600 dark:text-stone-400">{stats.longestHike.distance} km</p>
                     </div>
                   )}
                 </div>
@@ -518,16 +743,16 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                 {/* Randonnées récentes */}
                 {stats.recentHikes.length > 0 && (
                   <div>
-                    <h4 className="font-semibold text-stone-800 mb-4">Randonnées récentes</h4>
+                    <h4 className="font-semibold text-stone-800 dark:text-stone-200 mb-4">Randonnées récentes</h4>
                     <div className="space-y-3">
                       {stats.recentHikes.map((hike) => (
                         <div
                           key={hike.id}
-                          className="bg-stone-50 rounded-lg p-4 border border-stone-200 flex items-center justify-between"
+                          className="bg-stone-50 dark:bg-stone-700 rounded-3xl p-4 border border-stone-200 dark:border-stone-600 flex items-center justify-between"
                         >
                           <div>
-                            <p className="font-semibold text-stone-800">{hike.name}</p>
-                            <div className="flex items-center gap-4 text-sm text-stone-600 mt-1">
+                            <p className="font-semibold text-stone-800 dark:text-stone-100">{hike.name}</p>
+                            <div className="flex items-center gap-4 text-sm text-stone-600 dark:text-stone-400 mt-1">
                               <span className="flex items-center gap-1">
                                 <Calendar className="w-4 h-4" />
                                 {new Date(hike.date).toLocaleDateString('fr-FR')}
@@ -538,6 +763,77 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                         </div>
                       ))}
                     </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Onglet Randonnées favorites */}
+            {activeTab === 'favorites' && (
+              <div className="space-y-6">
+                <h3 className="text-xl font-bold text-stone-800 dark:text-stone-100 mb-4 flex items-center gap-2">
+                  <Heart className="w-5 h-5" />
+                  Mes Randonnées Favorites
+                </h3>
+
+                {allHikes.length === 0 ? (
+                  <div className="text-center py-12 bg-stone-50 dark:bg-stone-800 rounded-3xl">
+                    <Heart className="w-12 h-12 text-stone-400 mx-auto mb-4" />
+                    <p className="text-stone-600 dark:text-stone-400">
+                      Vous n'avez pas encore de randonnées. Créez-en une pour commencer !
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {allHikes.map((hike) => {
+                      const isFavorite = favoriteHikeIds.includes(hike.id);
+                      return (
+                        <div
+                          key={hike.id}
+                          className="bg-stone-50 dark:bg-stone-800 rounded-3xl p-4 border border-stone-200 dark:border-stone-700 flex items-center justify-between hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex-1">
+                            <div className="flex items-center gap-3 mb-2">
+                              <p className="font-semibold text-stone-800 dark:text-stone-100">{hike.name}</p>
+                              {isFavorite && (
+                                <Heart className="w-4 h-4 text-red-500 fill-red-500" />
+                              )}
+                            </div>
+                            <div className="flex items-center gap-4 text-sm text-stone-600 dark:text-stone-400">
+                              <span className="flex items-center gap-1">
+                                <Calendar className="w-4 h-4" />
+                                {new Date(hike.date).toLocaleDateString('fr-FR')}
+                              </span>
+                              <span>{hike.distance} km</span>
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-4 h-4" />
+                                {hike.startLocation} → {hike.endLocation}
+                              </span>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => handleToggleFavorite(hike.id)}
+                            className={`ml-4 p-2 rounded-3xl transition-colors ${
+                              isFavorite
+                                ? 'bg-red-100 dark:bg-red-900/30 text-red-600 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                                : 'bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400 hover:bg-stone-200 dark:hover:bg-stone-600'
+                            }`}
+                            title={isFavorite ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                          >
+                            <Heart className={`w-5 h-5 ${isFavorite ? 'fill-current' : ''}`} />
+                          </button>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                {favoriteHikeIds.length === 0 && allHikes.length > 0 && (
+                  <div className="text-center py-8 bg-stone-50 dark:bg-stone-800 rounded-3xl">
+                    <Heart className="w-10 h-10 text-stone-400 mx-auto mb-3" />
+                    <p className="text-stone-600 dark:text-stone-400">
+                      Vous n'avez pas encore de randonnées favorites. Cliquez sur le cœur pour en ajouter !
+                    </p>
                   </div>
                 )}
               </div>

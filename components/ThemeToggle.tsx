@@ -15,7 +15,7 @@ export const ThemeToggle: React.FC = () => {
     <button
       onClick={handleClick}
       type="button"
-      className="p-2 rounded-lg bg-emerald-800 hover:bg-emerald-700 dark:bg-stone-700 dark:hover:bg-stone-600 transition-colors text-white"
+      className="p-2 rounded-3xl bg-emerald-800 hover:bg-emerald-700 dark:bg-stone-700 dark:hover:bg-stone-600 transition-colors text-white"
       title={theme === 'light' ? 'Activer le mode sombre' : 'Activer le mode clair'}
       aria-label={theme === 'light' ? 'Activer le mode sombre' : 'Activer le mode clair'}
     >

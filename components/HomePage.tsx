@@ -59,7 +59,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
               return (
                 <div
                   key={index}
-                  className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm rounded-2xl p-8 shadow-lg border border-stone-200 dark:border-stone-700 hover:shadow-xl transition-shadow duration-300"
+                  className="bg-white/80 dark:bg-stone-800/80 backdrop-blur-sm rounded-3xl p-8 shadow-lg border border-stone-200 dark:border-stone-700 hover:shadow-xl transition-shadow duration-300"
                 >
                   <div className="flex items-start gap-4">
                     <div className="flex-shrink-0 mt-1">
@@ -78,7 +78,7 @@ export const HomePage: React.FC<HomePageProps> = ({ onEnterApp }) => {
           <div className="text-center pt-8">
             <button
               onClick={onEnterApp}
-              className="group inline-flex items-center gap-3 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-semibold text-lg px-10 py-4 rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
+              className="group inline-flex items-center gap-3 bg-emerald-700 hover:bg-emerald-800 dark:bg-emerald-600 dark:hover:bg-emerald-700 text-white font-semibold text-lg px-10 py-4 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               <span>Commencer l'aventure</span>
               <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

@@ -44,3 +44,5 @@ BEGIN
   RAISE NOTICE '20 randonnées d''exemple ont été insérées avec succès pour l''utilisateur % !', target_user_id;
 END $$;
 
+
+

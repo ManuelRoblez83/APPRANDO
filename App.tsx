@@ -502,7 +502,7 @@ const App: React.FC = () => {
               onLoadHike={handleEdit}
             />
             
-            <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-xl text-sm text-emerald-800">
+            <div className="bg-emerald-50 border border-emerald-100 p-4 rounded-3xl text-sm text-emerald-800">
               <h3 className="font-bold flex items-center gap-2 mb-2">
                 <MapIcon className="w-4 h-4" /> Comment ça marche ?
               </h3>
@@ -542,7 +542,7 @@ const App: React.FC = () => {
             )}
           </h2>
           {isLoadingHikes ? (
-            <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
+            <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-3xl border border-dashed border-stone-300 dark:border-stone-700">
               <span className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent inline-block"></span>
               <p className="text-stone-400 dark:text-stone-500 mt-2">Chargement des randonnées...</p>
             </div>

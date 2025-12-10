@@ -126,7 +126,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
           {onShowProfile && (
             <button
               onClick={onShowProfile}
-              className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 px-3 py-2 rounded-lg transition-colors text-sm font-medium"
+              className="flex items-center gap-2 bg-emerald-700 hover:bg-emerald-600 px-3 py-2 rounded-3xl transition-colors text-sm font-medium"
               title="Mon compte"
             >
               <Settings className="w-4 h-4" />
@@ -159,7 +159,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
           <button
             onClick={handleSignOut}
             disabled={isSubmitting}
-            className="flex items-center gap-2 bg-emerald-800 hover:bg-emerald-700 px-3 py-2 rounded-lg transition-colors text-sm font-medium disabled:opacity-50"
+            className="flex items-center gap-2 bg-emerald-800 hover:bg-emerald-700 px-3 py-2 rounded-3xl transition-colors text-sm font-medium disabled:opacity-50"
           >
             <LogOut className="w-4 h-4" />
             <span className="hidden sm:inline">Déconnexion</span>
@@ -191,7 +191,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
           onClick={() => setShowModal(false)}
         >
           <div
-            className="bg-white dark:bg-stone-800 rounded-xl shadow-xl max-w-md w-full p-6"
+            className="bg-white dark:bg-stone-800 rounded-3xl shadow-xl max-w-md w-full p-6"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between mb-4">
@@ -216,7 +216,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
-                  className="auth-input w-full p-3 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-black dark:text-stone-100"
+                  className="auth-input w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-black dark:text-stone-100"
                   placeholder="votre@email.com"
                   style={{ color: '#000000', backgroundColor: '#ffffff' }}
                 />
@@ -232,7 +232,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   minLength={6}
-                  className="auth-input w-full p-3 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-black dark:text-stone-100"
+                  className="auth-input w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-black dark:text-stone-100"
                   placeholder="••••••••"
                   style={{ color: '#000000', backgroundColor: '#ffffff' }}
                 />
@@ -244,7 +244,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
               </div>
 
               {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-lg text-sm">
+                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm">
                   {error}
                 </div>
               )}
@@ -253,7 +253,7 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 rounded-3xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>

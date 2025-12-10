@@ -191,7 +191,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none transition pr-8 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+          className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition pr-8 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
           autoComplete="off"
         />
         <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -207,7 +207,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       {showSuggestions && suggestions.length > 0 && (
         <div
           ref={suggestionsRef}
-          className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-lg shadow-xl max-h-80 overflow-y-auto"
+          className="absolute z-50 w-full mt-1 bg-white dark:bg-stone-800 border border-stone-200 dark:border-stone-700 rounded-3xl shadow-xl max-h-80 overflow-y-auto"
           style={{ minWidth: '100%', maxWidth: '100%' }}
         >
           {suggestions.map((suggestion, index) => {

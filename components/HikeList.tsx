@@ -48,7 +48,7 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
 
   if (hikes.length === 0) {
     return (
-      <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
+      <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-3xl border border-dashed border-stone-300 dark:border-stone-700">
         <p className="text-stone-400 dark:text-stone-500">Aucune randonnée enregistrée pour le moment.</p>
       </div>
     );
@@ -72,7 +72,7 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
 
       {/* Résultats de la recherche */}
       {filteredHikes.length === 0 ? (
-        <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-2xl border border-dashed border-stone-300 dark:border-stone-700">
+        <div className="text-center py-10 bg-white dark:bg-stone-800 rounded-3xl border border-dashed border-stone-300 dark:border-stone-700">
           <p className="text-stone-400 dark:text-stone-500">Aucune randonnée ne correspond à votre recherche.</p>
           <button
             onClick={() => setSearchQuery('')}
@@ -86,7 +86,7 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
           {filteredHikes.map((hike) => (
         <div 
           key={hike.id} 
-          className="bg-white dark:bg-stone-800 rounded-xl shadow-sm border border-stone-200 dark:border-stone-700 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
+          className="bg-white dark:bg-stone-800 rounded-3xl shadow-sm border border-stone-200 dark:border-stone-700 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"
           onClick={() => onShowOnMap(hike)}
         >
           <div className="bg-emerald-50 dark:bg-emerald-900/20 p-4 border-b border-stone-100 dark:border-stone-700 flex justify-between items-start">

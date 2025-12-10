@@ -111,7 +111,7 @@ export const SocialShare: React.FC<SocialShareProps> = ({ hike }) => {
           e.stopPropagation();
           setIsOpen(!isOpen);
         }}
-        className="text-stone-400 hover:text-emerald-600 transition-colors p-1.5 rounded-md hover:bg-emerald-50"
+        className="text-stone-400 hover:text-emerald-600 transition-colors p-1.5 rounded-3xl hover:bg-emerald-50"
         title="Partager"
       >
         <Share2 className="w-4 h-4" />
@@ -130,7 +130,7 @@ export const SocialShare: React.FC<SocialShareProps> = ({ hike }) => {
           
           {/* Menu de partage */}
           <div
-            className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-lg border border-stone-200 p-2 z-50 min-w-[200px]"
+            className="absolute right-0 top-full mt-2 bg-white rounded-3xl shadow-lg border border-stone-200 p-2 z-50 min-w-[200px]"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="text-xs font-semibold text-stone-500 px-2 py-1 mb-1 border-b border-stone-100">
@@ -141,7 +141,7 @@ export const SocialShare: React.FC<SocialShareProps> = ({ hike }) => {
             {navigator.share && (
               <button
                 onClick={handleNativeShare}
-                className="w-full flex items-center gap-2 px-3 py-2 rounded-md hover:bg-emerald-50 text-sm text-stone-700 transition-colors"
+                className="w-full flex items-center gap-2 px-3 py-2 rounded-3xl hover:bg-emerald-50 text-sm text-stone-700 transition-colors"
               >
                 <Share2 className="w-4 h-4 text-emerald-600" />
                 Partager (natif)
@@ -207,6 +207,8 @@ export const SocialShare: React.FC<SocialShareProps> = ({ hike }) => {
     </div>
   );
 };
+
+
 
 
 
