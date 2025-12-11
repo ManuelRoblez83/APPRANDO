@@ -72,3 +72,5 @@ Les nouvelles fonctionnalités sont accessibles dans l'onglet **"Profil"** et **
 - **Onglet Profil** : Formulaire pour modifier les informations personnelles et l'email
 - **Onglet Favoris** : Liste de toutes les randonnées avec possibilité de les marquer comme favorites
 
+
+

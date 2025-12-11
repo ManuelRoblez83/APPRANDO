@@ -70,9 +70,117 @@ export interface RouteData {
 }
 
 /**
+ * Calculate multiple alternative routes using OSRM API
+ * Returns up to 3 different pedestrian routes if available
+ */
+export const getRoutes = async (
+  start: Coordinates,
+  end: Coordinates,
+  maxAlternatives: number = 3
+): Promise<RouteData[]> => {
+  try {
+    // Vérifier si les coordonnées de départ et d'arrivée sont identiques (ou très proches)
+    const distanceBetweenPoints = calculateDistance(start, end);
+    if (distanceBetweenPoints < 10) {
+      console.warn('Les points de départ et d\'arrivée sont trop proches ou identiques');
+      return [];
+    }
+
+    // OSRM routing API - using walking profile for pedestrian routes only
+    // alternatives=true: get multiple route options (OSRM returns up to 3 alternatives automatically)
+    const url = `https://router.project-osrm.org/route/v1/walking/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&steps=true&alternatives=true&continue_straight=false`;
+    
+    const response = await fetch(url);
+    
+    // Check if response is ok
+    if (!response.ok) {
+      console.warn(`OSRM API returned status ${response.status}: ${response.statusText}`);
+      return [];
+    }
+    
+    const data = await response.json();
+    
+    // Check for API errors in response
+    if (data.error) {
+      console.warn('OSRM API error:', data.error);
+      return [];
+    }
+
+    // Check if routes were found successfully
+    if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
+      const routes: RouteData[] = [];
+      
+      // Process each route (up to maxAlternatives)
+      data.routes.slice(0, maxAlternatives).forEach((route: any, index: number) => {
+        // Validate that we have valid route data
+        if (!route.geometry || !route.geometry.coordinates || route.geometry.coordinates.length === 0) {
+          console.warn(`Route ${index} found but has no geometry`);
+          return;
+        }
+
+        // Extract all coordinates from the main geometry
+        const allCoordinates: RoutePoint[] = route.geometry.coordinates.map(
+          ([lng, lat]: [number, number]) => ({
+            lng: parseFloat(lng.toFixed(7)),
+            lat: parseFloat(lat.toFixed(7)),
+          })
+        );
+
+        // Extract step information for detailed route data
+        const steps: RouteStep[] = [];
+        if (route.legs && route.legs.length > 0) {
+          route.legs.forEach((leg: any) => {
+            if (leg.steps && Array.isArray(leg.steps)) {
+              leg.steps.forEach((step: any) => {
+                if (step.geometry && step.geometry.coordinates) {
+                  steps.push({
+                    distance: step.distance || 0,
+                    duration: step.duration || 0,
+                    instruction: step.maneuver?.instruction || step.maneuver?.type || '',
+                    name: step.name || '',
+                    mode: step.mode || 'walking',
+                    geometry: step.geometry.coordinates,
+                  });
+                }
+              });
+            }
+          });
+        }
+
+        // Calculate realistic walking duration based on actual distance
+        const realisticDuration = calculateRealisticWalkingDuration(route.distance);
+
+        routes.push({
+          coordinates: allCoordinates,
+          distance: route.distance,
+          duration: realisticDuration,
+          geometry: JSON.stringify(route.geometry),
+          steps: steps.length > 0 ? steps : undefined,
+        });
+      });
+
+      return routes;
+    }
+
+    // Handle specific error codes
+    if (data.code === 'NoRoute') {
+      console.warn('No pedestrian route found between the specified points');
+      return [];
+    }
+
+    console.warn('Route calculation failed:', data.code, data.message);
+    return [];
+  } catch (error) {
+    console.error('Error getting routes:', error);
+    return [];
+  }
+};
+
+/**
  * Calculate route using OSRM (Open Source Routing Machine) API
  * Uses walking profile to ensure only pedestrian-accessible routes
  * Free service, no API key required for basic usage
+ * @deprecated Use getRoutes for multiple alternatives
  */
 export const getRoute = async (
   start: Coordinates,
@@ -97,7 +205,20 @@ export const getRoute = async (
     const url = `https://router.project-osrm.org/route/v1/walking/${start.lng},${start.lat};${end.lng},${end.lat}?overview=full&geometries=geojson&steps=true&alternatives=false&continue_straight=false`;
     
     const response = await fetch(url);
+    
+    // Check if response is ok
+    if (!response.ok) {
+      console.warn(`OSRM API returned status ${response.status}: ${response.statusText}`);
+      return null;
+    }
+    
     const data = await response.json();
+    
+    // Check for API errors in response
+    if (data.error) {
+      console.warn('OSRM API error:', data.error);
+      return null;
+    }
 
     // Check if route was found successfully
     if (data.code === 'Ok' && data.routes && data.routes.length > 0) {
@@ -148,7 +269,7 @@ export const getRoute = async (
         coordinates: allCoordinates,
         distance: route.distance, // in meters
         duration: realisticDuration, // in seconds (realistic walking duration)
-        geometry: route.geometry,
+        geometry: JSON.stringify(route.geometry), // Convert GeoJSON to string
         steps: steps.length > 0 ? steps : undefined,
       };
     }

@@ -91,6 +91,8 @@ interface MapDisplayProps {
   isRouteLoading?: boolean;
   onMapClick?: (coordinates: Coordinates) => void;
   selectionMode?: 'start' | 'end' | null;
+  formattedDistance?: string;
+  formattedDuration?: string;
 }
 
 // Custom SVG icon for markers
@@ -120,6 +122,8 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
   isRouteLoading = false,
   onMapClick,
   selectionMode,
+  formattedDistance,
+  formattedDuration,
 }) => {
   const defaultCenter: LatLngTuple = [46.603354, 1.888334]; // Center of France
   
@@ -128,12 +132,10 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
   const endIcon = useMemo(() => createCustomIcon('#ef4444'), []);
   
   // Prepare route coordinates for Polyline
-  // Only show route if a valid pedestrian route was found
   const routePositions = useMemo<LatLngTuple[]>(() => {
-    if (routeData && routeData.coordinates.length > 0) {
+    if (routeData && routeData.coordinates && routeData.coordinates.length > 0) {
       return routeData.coordinates.map((coord) => [coord.lat, coord.lng] as LatLngTuple);
     }
-    // Don't show straight line - only show actual pedestrian routes
     return [];
   }, [routeData]);
   
@@ -171,28 +173,34 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
   }, [startCoords, endCoords, routeData]);
   
   return (
-    <div className="h-[500px] w-full rounded-2xl overflow-hidden shadow-sm border border-stone-200 dark:border-stone-700 relative bg-stone-100 dark:bg-stone-900">
+    <div className="h-[500px] w-full rounded-3xl overflow-hidden shadow-lg border border-stone-200 dark:border-stone-700 relative bg-stone-100 dark:bg-stone-900 transition-all duration-300 hover:shadow-xl">
       {/* Selection Mode Indicator */}
       {selectionMode && (
-        <div className="absolute top-4 left-4 z-[1000] bg-blue-500 dark:bg-blue-600 text-white px-4 py-2 rounded-lg shadow-lg font-medium text-sm">
+        <div className="absolute top-4 left-4 z-[1000] bg-blue-500 dark:bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-xl font-medium text-sm animate-fade-in-up backdrop-blur-sm border border-blue-400/30">
           {selectionMode === 'start' ? '📍 Cliquez sur la carte pour choisir le point de départ' : '📍 Cliquez sur la carte pour choisir le point d\'arrivée'}
         </div>
       )}
       
       {/* Route Info Overlay - Compact en haut à droite avec détails du dénivelé */}
       {routeData && (
-        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-sm rounded-lg p-2.5 shadow-lg border border-emerald-200 dark:border-emerald-800 max-w-[320px]">
+        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-emerald-200/50 dark:border-emerald-800/50 max-w-[320px] animate-scale-in">
           <div className="flex items-center justify-between mb-2">
-            <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">🚶 Itinéraire pédestre</span>
+            <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
+              🚶 Itinéraire pédestre
+            </span>
           </div>
           <div className="grid grid-cols-2 gap-2 text-xs mb-2">
             <div>
               <span className="text-stone-500 dark:text-stone-400 text-[10px]">Distance</span>
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">{formatDistance(routeData.distance)}</p>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
+                {formattedDistance ? `${formattedDistance} km` : formatDistance(routeData.distance)}
+              </p>
             </div>
             <div>
               <span className="text-stone-500 dark:text-stone-400 text-[10px]">Durée (à pied)</span>
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">{formatDuration(routeData.duration)}</p>
+              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
+                {formattedDuration || formatDuration(routeData.duration)}
+              </p>
             </div>
           </div>
           {routeData.elevationProfile && (
@@ -223,9 +231,9 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
       )}
       
       {isRouteLoading && (
-        <div className="absolute top-4 left-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-stone-200 dark:border-stone-700">
-          <div className="flex items-center gap-2 text-sm text-stone-600 dark:text-stone-300">
-            <span className="animate-spin rounded-full h-4 w-4 border-2 border-emerald-500 border-t-transparent"></span>
+        <div className="absolute top-4 left-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-stone-200/50 dark:border-stone-700/50 animate-fade-in">
+          <div className="flex items-center gap-3 text-sm text-stone-600 dark:text-stone-300 font-medium">
+            <span className="animate-spin rounded-full h-5 w-5 border-2 border-emerald-500 border-t-transparent"></span>
             Calcul de l'itinéraire pédestre...
           </div>
         </div>
@@ -281,10 +289,10 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
                   <>
                     <div className="border-t border-stone-200 dark:border-stone-700 mt-2 pt-2">
                       <div className="text-xs text-stone-600 dark:text-stone-400">
-                        <strong>Distance:</strong> {formatDistance(routeData.distance)}
+                        <strong>Distance:</strong> {formattedDistance ? `${formattedDistance} km` : formatDistance(routeData.distance)}
                       </div>
                       <div className="text-xs text-stone-600 dark:text-stone-400">
-                        <strong>Durée:</strong> {formatDuration(routeData.duration)}
+                        <strong>Durée:</strong> {formattedDuration || formatDuration(routeData.duration)}
                       </div>
                     </div>
                   </>
@@ -294,8 +302,7 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
           </Marker>
         )}
 
-        {/* Only display route if a valid pedestrian route was found */}
-        {/* High precision rendering with smoothFactor for better curve rendering */}
+        {/* Display route */}
         {routePositions.length > 0 && routeData && (
           <Polyline 
             positions={routePositions}
@@ -305,16 +312,16 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
               opacity: 0.95,
               lineCap: 'round',
               lineJoin: 'round',
-              smoothFactor: 1.0, // Minimal smoothing to preserve precision
+              smoothFactor: 1.0,
             }}
           />
         )}
         
         {/* Show message if no pedestrian route found but coordinates are available */}
         {startCoords && endCoords && !routeData && !isRouteLoading && (
-          <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-amber-50/95 backdrop-blur-sm rounded-lg p-3 shadow-lg border border-amber-200">
-            <div className="flex items-center gap-2 text-sm text-amber-800">
-              <span className="text-amber-600">⚠️</span>
+          <div className="absolute bottom-4 left-4 right-4 z-[1000] bg-amber-50/95 dark:bg-amber-900/30 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-amber-200/50 dark:border-amber-800/50 animate-fade-in">
+            <div className="flex items-center gap-2 text-sm text-amber-800 dark:text-amber-200 font-medium">
+              <span className="text-amber-600 dark:text-amber-400">⚠️</span>
               <span>Aucun itinéraire pédestre trouvé entre ces points</span>
             </div>
           </div>

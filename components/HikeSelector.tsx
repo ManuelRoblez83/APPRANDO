@@ -95,7 +95,7 @@ export const HikeSelector: React.FC<HikeSelectorProps> = ({
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-2.5 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-3xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-medium"
+        className="w-full px-4 py-3 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-3xl hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors flex items-center justify-between text-emerald-800 dark:text-emerald-300 font-medium"
       >
         <span className="flex items-center gap-2">
           <MapPin className="w-4 h-4" />
@@ -115,8 +115,7 @@ export const HikeSelector: React.FC<HikeSelectorProps> = ({
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Rechercher..."
-                className="w-full pl-9 pr-3 py-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none text-sm bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
-                style={{ color: '#1c1917', backgroundColor: '#ffffff' }}
+                className="w-full pl-9 pr-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 text-sm bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-500"
                 onClick={(e) => e.stopPropagation()}
               />
             </div>

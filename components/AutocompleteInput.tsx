@@ -191,10 +191,10 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           }}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition pr-8 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+          className="w-full h-12 px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 pr-10 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-500"
           autoComplete="off"
         />
-        <div className="absolute right-2 top-1/2 -translate-y-1/2">
+        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
           {isLoading ? (
             <Loader className="w-4 h-4 text-stone-400 dark:text-stone-500 animate-spin" />
           ) : (

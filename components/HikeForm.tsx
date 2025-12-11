@@ -34,9 +34,9 @@ export const HikeForm: React.FC<HikeFormProps> = ({
   onLoadHike,
 }) => {
   return (
-    <div className="bg-white dark:bg-stone-800 p-6 rounded-3xl shadow-sm border border-stone-200 dark:border-stone-700 transition-colors">
-      <h2 className="text-xl font-bold text-emerald-800 dark:text-emerald-400 mb-4 flex items-center gap-2">
-        <Navigation className="w-5 h-5" />
+    <div className="bg-white dark:bg-stone-800 p-6 rounded-3xl shadow-lg border border-stone-200 dark:border-stone-700 transition-all duration-300 hover:shadow-xl">
+      <h2 className="text-xl font-bold text-emerald-800 dark:text-emerald-400 mb-6 flex items-center gap-2">
+        <Navigation className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
         {isEditing ? 'Modifier la Randonnée' : 'Nouvelle Randonnée'}
       </h2>
 
@@ -62,8 +62,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
             value={formData.name}
             onChange={onChange}
             placeholder="Ex: Tour du Mont Blanc"
-            className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
-            style={{ color: '#1c1917', backgroundColor: '#ffffff' }}
+            className="w-full h-12 px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-500"
           />
         </div>
 
@@ -76,7 +75,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
             name="date"
             value={formData.date}
             onChange={onChange}
-            className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-100"
+            className="w-full h-12 px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500"
           />
         </div>
 
@@ -149,9 +148,8 @@ export const HikeForm: React.FC<HikeFormProps> = ({
             onChange={onChange}
             placeholder="Distance en km"
             step="0.1"
-            className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-emerald-50/50 dark:bg-emerald-900/20 text-stone-800 dark:text-stone-100"
+            className="w-full h-12 px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-emerald-50/50 dark:bg-emerald-900/30 text-stone-900 dark:text-stone-100 font-medium hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-400"
             readOnly={false}
-            style={{ color: '#1c1917', backgroundColor: '#ecfdf5' }}
           />
         </div>
 
@@ -165,8 +163,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
             value={formData.duration}
             onChange={onChange}
             placeholder="Ex: 4h 30m"
-            className="w-full p-2 border border-stone-300 dark:border-stone-600 rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:outline-none transition bg-emerald-50/50 dark:bg-emerald-900/20 text-stone-800 dark:text-stone-100"
-            style={{ color: '#1c1917', backgroundColor: '#ecfdf5' }}
+            className="w-full h-12 px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-emerald-50/50 dark:bg-emerald-900/30 text-stone-900 dark:text-stone-100 font-medium hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-400"
           />
         </div>
       </div>
@@ -175,7 +172,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
         <button
           onClick={onPreview}
           disabled={isLoading || !formData.startLocation || !formData.endLocation}
-          className="flex-1 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 font-semibold py-2 px-4 rounded-3xl flex items-center justify-center gap-2 transition disabled:opacity-50"
+          className="flex-1 bg-stone-100 dark:bg-stone-700 hover:bg-stone-200 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 font-semibold py-3 px-4 rounded-3xl flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md active:scale-95"
         >
           {isLoading ? (
             <span className="animate-spin rounded-full h-4 w-4 border-2 border-stone-500 dark:border-stone-300 border-t-transparent"></span>
@@ -188,7 +185,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
         {onCancel && (
           <button
             onClick={onCancel}
-            className="bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 font-semibold py-2 px-4 rounded-3xl flex items-center justify-center gap-2 transition"
+            className="bg-stone-200 dark:bg-stone-700 hover:bg-stone-300 dark:hover:bg-stone-600 text-stone-700 dark:text-stone-200 font-semibold py-3 px-4 rounded-3xl flex items-center justify-center gap-2 transition-all duration-200 hover:shadow-md active:scale-95"
           >
             <X className="w-4 h-4" />
             Annuler
@@ -198,7 +195,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
         <button
           onClick={onSave}
           disabled={!canSave}
-          className="flex-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-2 px-4 rounded-3xl flex items-center justify-center gap-2 transition disabled:opacity-50 disabled:bg-stone-300 dark:disabled:bg-stone-700"
+          className="flex-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 px-4 rounded-3xl flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:bg-stone-300 dark:disabled:bg-stone-700 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
         >
           <Save className="w-4 h-4" />
           {isEditing ? 'Mettre à jour' : 'Enregistrer la randonnée'}

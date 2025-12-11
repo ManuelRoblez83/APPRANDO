@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import toast from 'react-hot-toast';
 import { Share2, Facebook, Instagram, Twitter, MessageCircle, Copy, Check } from 'lucide-react';
 import { HikeData } from '../types';
 
@@ -94,14 +95,14 @@ export const SocialShare: React.FC<SocialShareProps> = ({ hike }) => {
       }, 2000);
     } catch (error) {
       console.error('Erreur lors de la copie:', error);
-      alert('Impossible de copier dans le presse-papiers');
+      toast.error('Impossible de copier dans le presse-papiers');
     }
   };
 
   // Pour Instagram, on copie juste le texte car il n'y a pas d'API de partage directe
   const handleInstagramShare = () => {
     handleCopy();
-    alert('Texte copié ! Collez-le dans votre post Instagram avec une photo de votre randonnée 🏔️');
+    toast.success('Texte copié ! Collez-le dans votre post Instagram avec une photo de votre randonnée 🏔️', { duration: 5000 });
   };
 
   return (
