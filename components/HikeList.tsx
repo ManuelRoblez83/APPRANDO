@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { HikeData } from '../types';
-import { MapPin, Clock, Ruler, Calendar, Trash2, Edit2, Eye, TrendingUp, TrendingDown, Search, X } from 'lucide-react';
+import { MapPin, Clock, Ruler, Calendar, Trash2, Edit2, Eye, TrendingUp, TrendingDown, Search, X, Image } from 'lucide-react';
 import { SocialShare } from './SocialShare';
 import { SearchBar } from './SearchBar';
 
@@ -107,6 +107,23 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
           style={{ animationDelay: `${index * 50}ms` }}
           onClick={() => onShowOnMap(hike)}
         >
+          {/* Photos de la randonnée */}
+          {hike.photos && hike.photos.length > 0 && (
+            <div className="relative h-48 overflow-hidden">
+              <img
+                src={hike.photos[0]}
+                alt={hike.name}
+                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              />
+              {hike.photos.length > 1 && (
+                <div className="absolute top-2 right-2 bg-black/50 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                  <Image className="w-3 h-3" />
+                  <span>{hike.photos.length}</span>
+                </div>
+              )}
+            </div>
+          )}
+          
           <div className="bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-900/30 dark:to-emerald-800/20 p-5 border-b border-stone-100 dark:border-stone-700 flex justify-between items-start">
             <div className="flex-1 min-w-0">
               <h3 className="font-bold text-emerald-900 dark:text-emerald-300 truncate text-lg group-hover:text-emerald-700 dark:group-hover:text-emerald-200 transition-colors">{hike.name}</h3>

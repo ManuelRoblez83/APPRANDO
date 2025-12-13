@@ -95,5 +95,19 @@ export const updateEmail = async (newEmail: string): Promise<{ error: string | n
   }
 };
 
+// Réinitialiser le mot de passe (envoie un email de réinitialisation)
+export const resetPassword = async (email: string): Promise<{ error: string | null }> => {
+  try {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) throw error;
+    return { error: null };
+  } catch (error: any) {
+    return { error: error.message || 'Erreur lors de l\'envoi de l\'email de réinitialisation' };
+  }
+};
+
 
 

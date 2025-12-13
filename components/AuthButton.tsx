@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
-import { User, LogIn, UserPlus, LogOut, X, Settings } from 'lucide-react';
-import { signIn, signUp, signOut, getCurrentUser, onAuthStateChange } from '../services/authService';
+import { User, LogIn, UserPlus, LogOut, X, Settings, Mail, ArrowLeft } from 'lucide-react';
+import { signIn, signUp, signOut, getCurrentUser, onAuthStateChange, resetPassword } from '../services/authService';
 import { User as SupabaseUser } from '@supabase/supabase-js';
 import { getProfilePictureUrl, generateDefaultAvatar } from '../services/profileService';
 
@@ -16,10 +16,12 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
   const [isLoading, setIsLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [isSignUp, setIsSignUp] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [profilePictureUrl, setProfilePictureUrl] = useState<string | null>(null);
 
@@ -57,6 +59,8 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
         setPassword('');
         setConfirmPassword('');
         setError('');
+        setSuccessMessage('');
+        setShowForgotPassword(false);
       }
     });
 
@@ -116,7 +120,9 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
 
   const openSignIn = () => {
     setIsSignUp(false);
+    setShowForgotPassword(false);
     setError('');
+    setSuccessMessage('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -125,11 +131,40 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
 
   const openSignUp = () => {
     setIsSignUp(true);
+    setShowForgotPassword(false);
     setError('');
+    setSuccessMessage('');
     setEmail('');
     setPassword('');
     setConfirmPassword('');
     setShowModal(true);
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setSuccessMessage('');
+    
+    if (!email) {
+      setError('Veuillez entrer votre adresse email');
+      return;
+    }
+
+    setIsSubmitting(true);
+
+    try {
+      const { error: resetError } = await resetPassword(email);
+      if (resetError) {
+        setError(resetError);
+      } else {
+        setSuccessMessage('Un email de réinitialisation a été envoyé à votre adresse. Vérifiez votre boîte de réception.');
+        setEmail('');
+      }
+    } catch (err: any) {
+      setError(err.message || 'Une erreur est survenue');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   // Exposer les fonctions pour les événements personnalisés
@@ -227,17 +262,95 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
           >
             <div className="flex items-center justify-between mb-6 flex-shrink-0">
               <h2 className="text-2xl font-bold text-emerald-800 dark:text-emerald-400">
-                {isSignUp ? 'Créer un compte' : 'Se connecter'}
+                {showForgotPassword 
+                  ? 'Mot de passe oublié' 
+                  : isSignUp 
+                    ? 'Créer un compte' 
+                    : 'Se connecter'}
               </h2>
               <button
-                onClick={() => setShowModal(false)}
+                onClick={() => {
+                  setShowModal(false);
+                  setShowForgotPassword(false);
+                  setError('');
+                  setSuccessMessage('');
+                }}
                 className="text-stone-400 dark:text-stone-500 hover:text-stone-600 dark:hover:text-stone-300 transition-colors p-1 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-full"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4 flex-shrink-0">
+            {showForgotPassword ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4 flex-shrink-0">
+                <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-3xl p-4 mb-4">
+                  <p className="text-sm text-emerald-800 dark:text-emerald-300">
+                    Entrez votre adresse email et nous vous enverrons un lien pour réinitialiser votre mot de passe.
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-1">
+                    Email
+                  </label>
+                  <input
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="auth-input w-full p-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-white dark:bg-stone-700 text-black dark:text-stone-100 hover:border-stone-400 dark:hover:border-stone-500"
+                    placeholder="votre@email.com"
+                  />
+                </div>
+
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm">
+                    {error}
+                  </div>
+                )}
+
+                {successMessage && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-3xl text-sm">
+                    {successMessage}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || !email}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 rounded-3xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                        Envoi en cours...
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-4 h-4" />
+                        Envoyer l'email de réinitialisation
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForgotPassword(false);
+                      setError('');
+                      setSuccessMessage('');
+                      setEmail('');
+                    }}
+                    className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors flex items-center justify-center gap-1"
+                  >
+                    <ArrowLeft className="w-3 h-3" />
+                    Retour à la connexion
+                  </button>
+                </div>
+              </form>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4 flex-shrink-0">
               <div>
                 <label className="block text-sm font-semibold text-stone-700 dark:text-stone-300 mb-1">
                   Email
@@ -299,45 +412,68 @@ export const AuthButton: React.FC<AuthButtonProps> = ({ onShowProfile, refreshPr
                 </div>
               )}
 
-              {error && (
-                <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm">
-                  {error}
-                </div>
-              )}
+                {error && (
+                  <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-400 px-4 py-3 rounded-3xl text-sm">
+                    {error}
+                  </div>
+                )}
 
-              <div className="flex flex-col gap-2">
-                <button
-                  type="submit"
-                  disabled={isSubmitting || (isSignUp && (password !== confirmPassword || password.length < 6))}
-                  className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 rounded-3xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
-                      {isSignUp ? 'Inscription...' : 'Connexion...'}
-                    </>
-                  ) : (
-                    <>
-                      {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
-                      {isSignUp ? 'Créer mon compte' : 'Se connecter'}
-                    </>
+                {successMessage && (
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-400 px-4 py-3 rounded-3xl text-sm">
+                    {successMessage}
+                  </div>
+                )}
+
+                <div className="flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    disabled={isSubmitting || (isSignUp && (password !== confirmPassword || password.length < 6))}
+                    className="w-full bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 rounded-3xl transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isSubmitting ? (
+                      <>
+                        <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></span>
+                        {isSignUp ? 'Inscription...' : 'Connexion...'}
+                      </>
+                    ) : (
+                      <>
+                        {isSignUp ? <UserPlus className="w-4 h-4" /> : <LogIn className="w-4 h-4" />}
+                        {isSignUp ? 'Créer mon compte' : 'Se connecter'}
+                      </>
+                    )}
+                  </button>
+
+                  {!isSignUp && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForgotPassword(true);
+                        setError('');
+                        setSuccessMessage('');
+                        setPassword('');
+                      }}
+                      className="text-sm text-stone-500 dark:text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors text-center"
+                    >
+                      Mot de passe oublié ?
+                    </button>
                   )}
-                </button>
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setError('');
-                  }}
-                  className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
-                >
-                  {isSignUp
-                    ? 'Déjà un compte ? Se connecter'
-                    : 'Pas encore de compte ? S\'inscrire'}
-                </button>
-              </div>
-            </form>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSignUp(!isSignUp);
+                      setError('');
+                      setSuccessMessage('');
+                    }}
+                    className="text-sm text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
+                  >
+                    {isSignUp
+                      ? 'Déjà un compte ? Se connecter'
+                      : 'Pas encore de compte ? S\'inscrire'}
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>,
         document.body

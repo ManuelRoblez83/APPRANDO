@@ -19,6 +19,7 @@ export interface HikeData {
     totalAscent: number;
     totalDescent: number;
   };
+  photos?: string[]; // URLs des photos
 }
 
 export interface HikeFormData {
@@ -28,4 +29,5 @@ export interface HikeFormData {
   endLocation: string;
   distance: string;
   duration: string;
+  photos?: File[]; // Fichiers photos à uploader
 }

@@ -1,5 +1,5 @@
-import React from 'react';
-import { MapPin, Calendar, Clock, Navigation, Search, Save, X, MousePointerClick } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { MapPin, Calendar, Clock, Navigation, Search, Save, X, MousePointerClick, Image, Upload, Trash2 } from 'lucide-react';
 import { HikeFormData, HikeData } from '../types';
 import { AutocompleteInput } from './AutocompleteInput';
 import { HikeSelector } from './HikeSelector';
@@ -7,6 +7,7 @@ import { HikeSelector } from './HikeSelector';
 interface HikeFormProps {
   formData: HikeFormData;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onPhotosChange?: (files: File[]) => void;
   onPreview: () => void;
   onSave: () => void;
   onCancel?: () => void;
@@ -17,11 +18,14 @@ interface HikeFormProps {
   selectionMode?: 'start' | 'end' | null;
   existingHikes?: HikeData[];
   onLoadHike?: (hike: HikeData) => void;
+  existingPhotos?: string[]; // URLs des photos existantes
+  onDeletePhoto?: (photoUrl: string) => void;
 }
 
 export const HikeForm: React.FC<HikeFormProps> = ({ 
   formData, 
-  onChange, 
+  onChange,
+  onPhotosChange,
   onPreview, 
   onSave, 
   onCancel,
@@ -32,7 +36,50 @@ export const HikeForm: React.FC<HikeFormProps> = ({
   selectionMode,
   existingHikes = [],
   onLoadHike,
+  existingPhotos = [],
+  onDeletePhoto,
 }) => {
+  const [previewPhotos, setPreviewPhotos] = useState<string[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    // Créer des prévisualisations
+    const newPreviews: string[] = [];
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const result = e.target?.result as string;
+        newPreviews.push(result);
+        if (newPreviews.length === files.length) {
+          setPreviewPhotos(prev => [...prev, ...newPreviews]);
+        }
+      };
+      reader.readAsDataURL(file);
+    });
+
+    // Notifier le parent
+    if (onPhotosChange) {
+      const currentFiles = formData.photos || [];
+      onPhotosChange([...currentFiles, ...files]);
+    }
+  };
+
+  const handleRemovePreview = (index: number) => {
+    setPreviewPhotos(prev => prev.filter((_, i) => i !== index));
+    if (onPhotosChange && formData.photos) {
+      const newFiles = formData.photos.filter((_, i) => i !== index);
+      onPhotosChange(newFiles);
+    }
+  };
+
+  const handleRemoveExistingPhoto = (photoUrl: string) => {
+    if (onDeletePhoto) {
+      onDeletePhoto(photoUrl);
+    }
+  };
   return (
     <div className="bg-white dark:bg-stone-800 p-6 rounded-3xl shadow-lg border border-stone-200 dark:border-stone-700 transition-all duration-300 hover:shadow-xl">
       <h2 className="text-xl font-bold text-emerald-800 dark:text-emerald-400 mb-6 flex items-center gap-2">
@@ -168,6 +215,83 @@ export const HikeForm: React.FC<HikeFormProps> = ({
         </div>
       </div>
 
+      {/* Section Upload de Photos */}
+      <div className="mt-6">
+        <label className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase mb-2 flex items-center gap-1">
+          <Image className="w-3 h-3" /> Photos de la randonnée
+        </label>
+        <div className="space-y-3">
+          {/* Photos existantes */}
+          {existingPhotos.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {existingPhotos.map((photoUrl, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={photoUrl}
+                    alt={`Photo ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
+                  />
+                  {onDeletePhoto && (
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveExistingPhoto(photoUrl)}
+                      className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Supprimer la photo"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Prévisualisations des nouvelles photos */}
+          {previewPhotos.length > 0 && (
+            <div className="grid grid-cols-3 gap-2">
+              {previewPhotos.map((preview, index) => (
+                <div key={index} className="relative group">
+                  <img
+                    src={preview}
+                    alt={`Aperçu ${index + 1}`}
+                    className="w-full h-24 object-cover rounded-lg border border-stone-200 dark:border-stone-700"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => handleRemovePreview(index)}
+                    className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Retirer la photo"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Bouton d'upload */}
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="w-full p-4 border-2 border-dashed border-stone-300 dark:border-stone-600 rounded-xl hover:border-emerald-500 dark:hover:border-emerald-500 transition-colors flex items-center justify-center gap-2 text-stone-600 dark:text-stone-400 hover:text-emerald-600 dark:hover:text-emerald-400"
+          >
+            <Upload className="w-5 h-5" />
+            <span className="text-sm font-medium">Ajouter des photos</span>
+          </button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            multiple
+            onChange={handleFileSelect}
+            className="hidden"
+          />
+          <p className="text-xs text-stone-500 dark:text-stone-400 text-center">
+            Formats acceptés: JPG, PNG, WebP (max 5MB par photo)
+          </p>
+        </div>
+      </div>
+
       <div className="mt-6 flex flex-col sm:flex-row gap-3">
         <button
           onClick={onPreview}
@@ -194,7 +318,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
 
         <button
           onClick={onSave}
-          disabled={!canSave}
+          disabled={isLoading || !formData.startLocation || !formData.endLocation}
           className="flex-1 bg-emerald-600 hover:bg-emerald-700 dark:bg-emerald-700 dark:hover:bg-emerald-600 text-white font-semibold py-3 px-4 rounded-3xl flex items-center justify-center gap-2 transition-all duration-200 disabled:opacity-50 disabled:bg-stone-300 dark:disabled:bg-stone-700 disabled:cursor-not-allowed hover:shadow-lg active:scale-95"
         >
           <Save className="w-4 h-4" />

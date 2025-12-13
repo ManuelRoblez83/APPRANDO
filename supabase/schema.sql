@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS hikes (
   start_coords JSONB,
   end_coords JSONB,
   elevation_profile JSONB,
+  photos JSONB,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()) NOT NULL
 );
@@ -23,6 +24,17 @@ BEGIN
     WHERE table_name = 'hikes' AND column_name = 'user_id'
   ) THEN
     ALTER TABLE hikes ADD COLUMN user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE;
+  END IF;
+END $$;
+
+-- Ajouter la colonne photos si elle n'existe pas déjà (pour les migrations)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'hikes' AND column_name = 'photos'
+  ) THEN
+    ALTER TABLE hikes ADD COLUMN photos JSONB;
   END IF;
 END $$;
 

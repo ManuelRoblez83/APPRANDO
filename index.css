@@ -149,6 +149,23 @@ select:focus-visible {
   border: none !important;
 }
 
+.custom-marker-icon svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.direction-marker-icon {
+  background: transparent !important;
+  border: none !important;
+}
+
+.direction-marker-icon svg {
+  display: block !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
 /* Force text color in auth form inputs */
 .auth-input {
   color: #000000 !important;

@@ -31,6 +31,7 @@ export interface HikeRow {
     totalAscent: number;
     totalDescent: number;
   } | null;
+  photos: string[] | null; // URLs des photos
   created_at?: string;
   updated_at?: string;
 }
@@ -48,6 +49,7 @@ export const rowToHikeData = (row: HikeRow): HikeData => {
     startCoords: row.start_coords || undefined,
     endCoords: row.end_coords || undefined,
     elevationProfile: row.elevation_profile || undefined,
+    photos: row.photos || undefined,
   };
 };
 
@@ -64,6 +66,7 @@ export const hikeDataToRow = (hike: HikeData): Omit<HikeRow, 'created_at' | 'upd
     start_coords: hike.startCoords || null,
     end_coords: hike.endCoords || null,
     elevation_profile: hike.elevationProfile || null,
+    photos: hike.photos || null,
   };
   
   // Ajouter l'ID seulement s'il est défini

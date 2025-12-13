@@ -1,10 +1,11 @@
-import React, { useEffect, useMemo } from 'react';
-import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
+import React, { useEffect, useMemo, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap, CircleMarker } from 'react-leaflet';
 import { divIcon, LatLngTuple, Icon, LeafletMouseEvent } from 'leaflet';
 import * as L from 'leaflet';
 import { Coordinates } from '../types';
 import { RouteData, formatDistance, formatDuration } from '../services/routingService';
 import { formatElevation, formatElevationDifference } from '../services/elevationService';
+import { Maximize2, Minimize2, Layers, ChevronDown, ChevronUp, BarChart3, X } from 'lucide-react';
 import 'leaflet/dist/leaflet.css';
 
 // Fix for default marker icons in Leaflet with Webpack/Vite
@@ -95,22 +96,80 @@ interface MapDisplayProps {
   formattedDuration?: string;
 }
 
-// Custom SVG icon for markers
-const createCustomIcon = (color: string) => {
-  const svg = `
-    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="${color}" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/>
-      <circle cx="12" cy="10" r="3"/>
+// Custom SVG icon for markers with better design
+const createCustomIcon = (color: string, isStart: boolean = false) => {
+  // Simple and reliable SVG icons - using unique IDs to avoid conflicts
+  const uniqueId = Math.random().toString(36).substring(7);
+  const shadowId = `shadow-${uniqueId}`;
+  
+  // Pin shape path (standard map pin)
+  const pinPath = 'M16 0C7.163 0 0 7.163 0 16c0 10 16 24 16 24s16-14 16-24C32 7.163 24.837 0 16 0z';
+  
+  const startIconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+      <defs>
+        <filter id="${shadowId}" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <path d="${pinPath}" fill="${color}" filter="url(#${shadowId})"/>
+      <circle cx="16" cy="16" r="8" fill="white"/>
+      <line x1="16" y1="10" x2="16" y2="22" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
+      <line x1="10" y1="16" x2="22" y2="16" stroke="${color}" stroke-width="2.5" stroke-linecap="round"/>
     </svg>
   `;
+  
+  const endIconSvg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40">
+      <defs>
+        <filter id="${shadowId}" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" flood-opacity="0.3"/>
+        </filter>
+      </defs>
+      <path d="${pinPath}" fill="${color}" filter="url(#${shadowId})"/>
+      <circle cx="16" cy="16" r="8" fill="white"/>
+      <circle cx="16" cy="16" r="5" fill="${color}"/>
+    </svg>
+  `;
+  
+  const svg = isStart ? startIconSvg : endIconSvg;
   
   return divIcon({
     className: 'custom-marker-icon',
     html: svg,
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32],
+    iconSize: [32, 40],
+    iconAnchor: [16, 40],
+    popupAnchor: [0, -40],
   });
+};
+
+// Create direction arrow marker
+const createDirectionIcon = (angle: number) => {
+  const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#059669" opacity="0.8" transform="rotate(${angle})">
+      <path d="M12 2L2 12l10 10 10-10L12 2z" stroke="white" stroke-width="1.5"/>
+    </svg>
+  `;
+  
+  return divIcon({
+    className: 'direction-marker-icon',
+    html: svg,
+    iconSize: [24, 24],
+    iconAnchor: [12, 12],
+  });
+};
+
+// Calculate angle between two points for direction arrows
+const calculateAngle = (point1: LatLngTuple, point2: LatLngTuple): number => {
+  const lat1 = point1[0] * Math.PI / 180;
+  const lat2 = point2[0] * Math.PI / 180;
+  const dLon = (point2[1] - point1[1]) * Math.PI / 180;
+  
+  const y = Math.sin(dLon) * Math.cos(lat2);
+  const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLon);
+  
+  const angle = Math.atan2(y, x) * 180 / Math.PI;
+  return (angle + 360) % 360;
 };
 
 export const MapDisplay: React.FC<MapDisplayProps> = ({ 
@@ -126,10 +185,13 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
   formattedDuration,
 }) => {
   const defaultCenter: LatLngTuple = [46.603354, 1.888334]; // Center of France
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [mapLayer, setMapLayer] = useState<'standard' | 'satellite' | 'terrain'>('standard');
+  const [showElevationProfile, setShowElevationProfile] = useState(false);
   
   // Memoize icons to prevent recreation on every render
-  const startIcon = useMemo(() => createCustomIcon('#10b981'), []);
-  const endIcon = useMemo(() => createCustomIcon('#ef4444'), []);
+  const startIcon = useMemo(() => createCustomIcon('#10b981', true), []);
+  const endIcon = useMemo(() => createCustomIcon('#ef4444', false), []);
   
   // Prepare route coordinates for Polyline
   const routePositions = useMemo<LatLngTuple[]>(() => {
@@ -138,6 +200,49 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
     }
     return [];
   }, [routeData]);
+
+  // Calculate direction markers along the route (optimized - fewer markers for better performance)
+  const directionMarkers = useMemo(() => {
+    if (routePositions.length < 3) return [];
+    const markers: Array<{ position: LatLngTuple; angle: number; icon: ReturnType<typeof createDirectionIcon> }> = [];
+    // Reduce number of markers for better performance - show every 15% instead of 10%
+    const step = Math.max(1, Math.floor(routePositions.length / 7));
+    
+    for (let i = step; i < routePositions.length - step; i += step) {
+      const angle = calculateAngle(routePositions[i - 1], routePositions[i + 1]);
+      const icon = createDirectionIcon(angle);
+      markers.push({ position: routePositions[i], angle, icon });
+    }
+    return markers;
+  }, [routePositions]);
+
+  // Get tile layer URL based on selected layer
+  const getTileLayerUrl = () => {
+    switch (mapLayer) {
+      case 'satellite':
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case 'terrain':
+        return 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
+      default:
+        return 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  };
+
+  const getTileLayerAttribution = () => {
+    switch (mapLayer) {
+      case 'satellite':
+        return '&copy; <a href="https://www.esri.com/">Esri</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>';
+      case 'terrain':
+        return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors, <a href="http://viewfinderpanoramas.org">SRTM</a> | Map style: &copy; <a href="https://opentopomap.org">OpenTopoMap</a>';
+      default:
+        return '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors';
+    }
+  };
+
+  // Toggle fullscreen
+  const toggleFullscreen = () => {
+    setIsFullscreen(!isFullscreen);
+  };
   
   // Calculate center based on coordinates if available
   const mapCenter: LatLngTuple = useMemo(() => {
@@ -173,57 +278,102 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
   }, [startCoords, endCoords, routeData]);
   
   return (
-    <div className="h-[500px] w-full rounded-3xl overflow-hidden shadow-lg border border-stone-200 dark:border-stone-700 relative bg-stone-100 dark:bg-stone-900 transition-all duration-300 hover:shadow-xl">
+    <div className={`${isFullscreen ? 'fixed inset-0 z-[9999] rounded-none' : 'h-[500px] w-full rounded-3xl'} overflow-hidden shadow-lg border border-stone-200 dark:border-stone-700 relative bg-stone-100 dark:bg-stone-900 transition-all duration-300 hover:shadow-xl`}>
+      {/* Map Controls */}
+      <div className="absolute top-4 left-4 z-[1000] flex flex-col gap-2">
+        {/* Layer Selector */}
+        <div className="bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-xl shadow-lg border border-stone-200/50 dark:border-stone-700/50 overflow-hidden">
+          <button
+            onClick={() => setMapLayer(mapLayer === 'standard' ? 'satellite' : mapLayer === 'satellite' ? 'terrain' : 'standard')}
+            className="p-2 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+            title="Changer le type de carte"
+          >
+            <Layers className="w-5 h-5 text-stone-700 dark:text-stone-300" />
+          </button>
+        </div>
+        
+        {/* Fullscreen Toggle */}
+        <button
+          onClick={toggleFullscreen}
+          className="bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-xl shadow-lg border border-stone-200/50 dark:border-stone-700/50 p-2 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+          title={isFullscreen ? 'Quitter le plein écran' : 'Plein écran'}
+        >
+          {isFullscreen ? (
+            <Minimize2 className="w-5 h-5 text-stone-700 dark:text-stone-300" />
+          ) : (
+            <Maximize2 className="w-5 h-5 text-stone-700 dark:text-stone-300" />
+          )}
+        </button>
+
+        {/* Elevation Profile Toggle - only show if route has elevation data */}
+        {routeData && routeData.elevationProfile && routePositions.length > 0 && (
+          <button
+            onClick={() => setShowElevationProfile(!showElevationProfile)}
+            className="bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-xl shadow-lg border border-stone-200/50 dark:border-stone-700/50 p-2 hover:bg-stone-100 dark:hover:bg-stone-700 transition-colors"
+            title={showElevationProfile ? 'Masquer le profil d\'élévation' : 'Afficher le profil d\'élévation'}
+          >
+            <BarChart3 className={`w-5 h-5 text-stone-700 dark:text-stone-300 ${showElevationProfile ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
+          </button>
+        )}
+      </div>
+
       {/* Selection Mode Indicator */}
       {selectionMode && (
-        <div className="absolute top-4 left-4 z-[1000] bg-blue-500 dark:bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-xl font-medium text-sm animate-fade-in-up backdrop-blur-sm border border-blue-400/30">
+        <div className="absolute top-4 left-20 z-[1000] bg-blue-500 dark:bg-blue-600 text-white px-4 py-3 rounded-2xl shadow-xl font-medium text-sm animate-fade-in-up backdrop-blur-sm border border-blue-400/30">
           {selectionMode === 'start' ? '📍 Cliquez sur la carte pour choisir le point de départ' : '📍 Cliquez sur la carte pour choisir le point d\'arrivée'}
         </div>
       )}
       
-      {/* Route Info Overlay - Compact en haut à droite avec détails du dénivelé */}
+      {/* Route Info Overlay - Enhanced with elevation profile visualization */}
       {routeData && (
-        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-2xl p-3 shadow-xl border border-emerald-200/50 dark:border-emerald-800/50 max-w-[320px] animate-scale-in">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-emerald-600 dark:text-emerald-400 text-[10px] font-semibold">
+        <div className="absolute top-4 right-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-emerald-200/50 dark:border-emerald-800/50 max-w-[340px] animate-scale-in">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide">
               🚶 Itinéraire pédestre
             </span>
           </div>
-          <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-            <div>
-              <span className="text-stone-500 dark:text-stone-400 text-[10px]">Distance</span>
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
+          <div className="grid grid-cols-2 gap-3 text-xs mb-3">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2">
+              <span className="text-stone-500 dark:text-stone-400 text-[10px] block mb-1">Distance</span>
+              <p className="font-bold text-emerald-700 dark:text-emerald-400 text-base leading-tight">
                 {formattedDistance ? `${formattedDistance} km` : formatDistance(routeData.distance)}
               </p>
             </div>
-            <div>
-              <span className="text-stone-500 dark:text-stone-400 text-[10px]">Durée (à pied)</span>
-              <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
+            <div className="bg-emerald-50 dark:bg-emerald-900/20 rounded-lg p-2">
+              <span className="text-stone-500 dark:text-stone-400 text-[10px] block mb-1">Durée</span>
+              <p className="font-bold text-emerald-700 dark:text-emerald-400 text-base leading-tight">
                 {formattedDuration || formatDuration(routeData.duration)}
               </p>
             </div>
           </div>
           {routeData.elevationProfile && (
-            <div className="border-t border-emerald-100 dark:border-emerald-800 pt-2 mt-2">
-              <div className="grid grid-cols-2 gap-2 text-xs">
-                <div>
-                  <span className="text-stone-500 dark:text-stone-400 text-[10px]">Dénivelé +</span>
-                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
-                    {formatElevation(routeData.elevationProfile.totalAscent)}
+            <div className="border-t border-emerald-100 dark:border-emerald-800 pt-3 mt-3">
+              <div className="mb-2">
+                <span className="text-stone-500 dark:text-stone-400 text-[10px] font-semibold uppercase">Profil d'élévation</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-xs mb-3">
+                <div className="bg-gradient-to-br from-emerald-100 to-emerald-200 dark:from-emerald-900/30 dark:to-emerald-800/30 rounded-lg p-2">
+                  <span className="text-stone-500 dark:text-stone-400 text-[10px] block mb-1">Montée</span>
+                  <p className="font-bold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
+                    ↗ {formatElevation(routeData.elevationProfile.totalAscent)}
                   </p>
                 </div>
-                <div>
-                  <span className="text-stone-500 dark:text-stone-400 text-[10px]">Dénivelé -</span>
-                  <p className="font-semibold text-emerald-700 dark:text-emerald-400 text-sm leading-tight">
-                    {formatElevation(routeData.elevationProfile.totalDescent)}
+                <div className="bg-gradient-to-br from-red-100 to-red-200 dark:from-red-900/30 dark:to-red-800/30 rounded-lg p-2">
+                  <span className="text-stone-500 dark:text-stone-400 text-[10px] block mb-1">Descente</span>
+                  <p className="font-bold text-red-700 dark:text-red-400 text-sm leading-tight">
+                    ↘ {formatElevation(routeData.elevationProfile.totalDescent)}
                   </p>
                 </div>
-                <div className="col-span-2 pt-1">
-                  <div className="flex items-center justify-between text-[10px] text-stone-600 dark:text-stone-400">
-                    <span>Altitude min: {formatElevation(routeData.elevationProfile.minElevation)}</span>
-                    <span>Alt. max: {formatElevation(routeData.elevationProfile.maxElevation)}</span>
-                  </div>
-                </div>
+              </div>
+              <div className="flex items-center justify-between text-[10px] text-stone-600 dark:text-stone-400 bg-stone-50 dark:bg-stone-900/50 rounded-lg p-2">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-blue-400"></span>
+                  Min: {formatElevation(routeData.elevationProfile.minElevation)}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-red-400"></span>
+                  Max: {formatElevation(routeData.elevationProfile.maxElevation)}
+                </span>
               </div>
             </div>
           )}
@@ -252,9 +402,9 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
         maxZoom={20}
       >
         <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          maxZoom={20}
+          attribution={getTileLayerAttribution()}
+          url={getTileLayerUrl()}
+          maxZoom={mapLayer === 'satellite' ? 19 : 20}
           zoomOffset={0}
           tileSize={256}
         />
@@ -302,19 +452,60 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
           </Marker>
         )}
 
-        {/* Display route */}
+        {/* Display route with enhanced styling - optimized rendering */}
         {routePositions.length > 0 && routeData && (
-          <Polyline 
-            positions={routePositions}
-            pathOptions={{ 
-              color: '#059669', 
-              weight: 6, 
-              opacity: 0.95,
-              lineCap: 'round',
-              lineJoin: 'round',
-              smoothFactor: 1.0,
-            }}
-          />
+          <>
+            {/* Shadow layer for depth effect - only render if route is visible */}
+            {routePositions.length > 1 && (
+              <Polyline 
+                positions={routePositions}
+                pathOptions={{ 
+                  color: '#000000', 
+                  weight: 8, 
+                  opacity: 0.2,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                  smoothFactor: 1.0,
+                }}
+              />
+            )}
+            {/* Main route line with gradient effect */}
+            <Polyline 
+              positions={routePositions}
+              pathOptions={{ 
+                color: '#059669', 
+                weight: 6, 
+                opacity: 0.95,
+                lineCap: 'round',
+                lineJoin: 'round',
+                smoothFactor: 1.0,
+              }}
+            />
+            {/* Highlight layer for better visibility - only for longer routes */}
+            {routePositions.length > 10 && (
+              <Polyline 
+                positions={routePositions}
+                pathOptions={{ 
+                  color: '#10b981', 
+                  weight: 3, 
+                  opacity: 0.6,
+                  lineCap: 'round',
+                  lineJoin: 'round',
+                  smoothFactor: 1.0,
+                }}
+              />
+            )}
+            {/* Direction markers along the route - optimized rendering (only for longer routes) */}
+            {routePositions.length > 20 && directionMarkers.map((marker, index) => (
+              <Marker
+                key={`direction-${marker.position[0]}-${marker.position[1]}-${index}`}
+                position={marker.position}
+                icon={marker.icon}
+                interactive={false}
+                zIndexOffset={100}
+              />
+            ))}
+          </>
         )}
         
         {/* Show message if no pedestrian route found but coordinates are available */}
@@ -327,6 +518,100 @@ export const MapDisplay: React.FC<MapDisplayProps> = ({
           </div>
         )}
       </MapContainer>
+
+      {/* Elevation Profile Visualization - Collapsible and repositioned */}
+      {routeData && routeData.elevationProfile && routePositions.length > 0 && showElevationProfile && (
+        <div className="absolute top-20 left-4 z-[1000] bg-white/95 dark:bg-stone-800/95 backdrop-blur-md rounded-2xl p-4 shadow-xl border border-emerald-200/50 dark:border-emerald-800/50 animate-fade-in-up w-[320px] max-h-[200px]">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-emerald-600 dark:text-emerald-400 text-xs font-bold uppercase tracking-wide flex items-center gap-2">
+              <BarChart3 className="w-4 h-4" />
+              Profil d'élévation
+            </span>
+            <button
+              onClick={() => setShowElevationProfile(false)}
+              className="p-1 hover:bg-stone-100 dark:hover:bg-stone-700 rounded-lg transition-colors"
+              title="Masquer le profil d'élévation"
+            >
+              <X className="w-4 h-4 text-stone-500 dark:text-stone-400" />
+            </button>
+          </div>
+          <div className="flex items-center gap-4 text-[10px] text-stone-500 dark:text-stone-400 mb-3">
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+              Min: {formatElevation(routeData.elevationProfile.minElevation)}
+            </span>
+            <span className="flex items-center gap-1">
+              <span className="w-2 h-2 rounded-full bg-red-500"></span>
+              Max: {formatElevation(routeData.elevationProfile.maxElevation)}
+            </span>
+          </div>
+          <div className="relative h-24 bg-gradient-to-br from-stone-50 to-stone-100 dark:from-stone-900 dark:to-stone-800 rounded-lg p-2 border border-stone-200 dark:border-stone-700">
+            {/* Simplified elevation profile visualization */}
+            <div className="relative w-full h-full">
+              {/* Grid lines */}
+              <svg className="absolute inset-0 w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {/* Horizontal grid lines */}
+                {[0, 25, 50, 75, 100].map((y) => (
+                  <line
+                    key={`grid-h-${y}`}
+                    x1="0"
+                    y1={y}
+                    x2="100"
+                    y2={y}
+                    stroke="currentColor"
+                    strokeWidth="0.5"
+                    opacity="0.2"
+                    className="text-stone-400 dark:text-stone-600"
+                  />
+                ))}
+                {/* Vertical grid lines */}
+                {[0, 25, 50, 75, 100].map((x) => (
+                  <line
+                    key={`grid-v-${x}`}
+                    x1={x}
+                    y1="0"
+                    x2={x}
+                    y2="100"
+                    stroke="currentColor"
+                    strokeWidth="0.5"
+                    opacity="0.2"
+                    className="text-stone-400 dark:text-stone-600"
+                  />
+                ))}
+                {/* Elevation profile area */}
+                <defs>
+                  <linearGradient id="elevationGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity="0.6" />
+                    <stop offset="100%" stopColor="#059669" stopOpacity="0.3" />
+                  </linearGradient>
+                </defs>
+                {/* Simplified elevation curve - using a smooth curve representation */}
+                <path
+                  d={`M 0,${100 - ((routeData.elevationProfile.minElevation - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} Q 25,${100 - ((routeData.elevationProfile.minElevation + routeData.elevationProfile.totalAscent * 0.3 - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} 50,${100 - ((routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} T 100,${100 - ((routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} L 100,100 L 0,100 Z`}
+                  fill="url(#elevationGradient)"
+                  stroke="#059669"
+                  strokeWidth="2"
+                  opacity="0.8"
+                />
+                {/* Elevation line */}
+                <path
+                  d={`M 0,${100 - ((routeData.elevationProfile.minElevation - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} Q 25,${100 - ((routeData.elevationProfile.minElevation + routeData.elevationProfile.totalAscent * 0.3 - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} 50,${100 - ((routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100} T 100,${100 - ((routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation) / (routeData.elevationProfile.maxElevation - routeData.elevationProfile.minElevation || 1)) * 100}`}
+                  fill="none"
+                  stroke="#059669"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                />
+              </svg>
+              {/* Labels */}
+              <div className="absolute bottom-0 left-0 right-0 flex justify-between text-[9px] text-stone-500 dark:text-stone-400 px-1">
+                <span>Départ</span>
+                <span>Milieu</span>
+                <span>Arrivée</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

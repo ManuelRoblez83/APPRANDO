@@ -45,6 +45,42 @@ export const createHike = async (hike: HikeData): Promise<HikeData | null> => {
     const row = hikeDataToRow(hike);
     const rowWithUserId = { ...row, user_id: user.id };
     
+    // Validation des champs requis avec messages détaillés
+    if (!rowWithUserId.name || rowWithUserId.name.trim() === '') {
+      throw new Error('Le nom de la randonnée est requis');
+    }
+    if (!rowWithUserId.date || rowWithUserId.date.trim() === '') {
+      throw new Error('La date est requise');
+    }
+    if (!rowWithUserId.start_location || rowWithUserId.start_location.trim() === '') {
+      throw new Error('Le point de départ est requis');
+    }
+    if (!rowWithUserId.end_location || rowWithUserId.end_location.trim() === '') {
+      throw new Error('Le point d\'arrivée est requis');
+    }
+    
+    // S'assurer que la distance est valide (au moins 0)
+    if (isNaN(rowWithUserId.distance) || rowWithUserId.distance < 0) {
+      rowWithUserId.distance = 0;
+    }
+    
+    // S'assurer que la durée est définie
+    if (!rowWithUserId.duration) {
+      rowWithUserId.duration = '';
+    }
+
+    console.log('Création de la randonnée avec les données:', {
+      name: rowWithUserId.name,
+      date: rowWithUserId.date,
+      start_location: rowWithUserId.start_location,
+      end_location: rowWithUserId.end_location,
+      distance: rowWithUserId.distance,
+      duration: rowWithUserId.duration,
+      has_start_coords: !!rowWithUserId.start_coords,
+      has_end_coords: !!rowWithUserId.end_coords,
+      user_id: user.id,
+    });
+
     const { data, error } = await supabase
       .from('hikes')
       .insert([rowWithUserId])
@@ -52,14 +88,30 @@ export const createHike = async (hike: HikeData): Promise<HikeData | null> => {
       .single();
 
     if (error) {
-      console.error('Erreur lors de la création de la randonnée:', error);
-      throw error;
+      console.error('Erreur Supabase lors de la création:', error);
+      console.error('Code d\'erreur:', error.code);
+      console.error('Message:', error.message);
+      console.error('Détails:', error.details);
+      console.error('Hint:', error.hint);
+      console.error('Données envoyées:', JSON.stringify(rowWithUserId, null, 2));
+      
+      // Retourner un message d'erreur plus détaillé
+      const errorMessage = error.message || 'Erreur inconnue lors de la création';
+      throw new Error(`Erreur Supabase: ${errorMessage}${error.details ? ` (${error.details})` : ''}`);
+    }
+
+    if (!data) {
+      throw new Error('Aucune donnée retournée après la création');
     }
 
     return rowToHikeData(data as HikeRow);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur createHike:', error);
-    return null;
+    console.error('Message d\'erreur:', error?.message);
+    console.error('Stack:', error?.stack);
+    
+    // Propager l'erreur avec le message pour l'afficher à l'utilisateur
+    throw error;
   }
 };
 
@@ -68,7 +120,16 @@ export const createHike = async (hike: HikeData): Promise<HikeData | null> => {
  */
 export const updateHike = async (hike: HikeData): Promise<HikeData | null> => {
   try {
+    if (!hike.id) {
+      throw new Error('L\'ID de la randonnée est requis pour la mise à jour');
+    }
+
     const row = hikeDataToRow(hike);
+    
+    // Validation des champs requis
+    if (!row.name || !row.date || !row.start_location || !row.end_location) {
+      throw new Error('Tous les champs requis doivent être remplis');
+    }
     
     const { data, error } = await supabase
       .from('hikes')
@@ -82,6 +143,7 @@ export const updateHike = async (hike: HikeData): Promise<HikeData | null> => {
         start_coords: row.start_coords,
         end_coords: row.end_coords,
         elevation_profile: row.elevation_profile,
+        photos: row.photos,
         updated_at: new Date().toISOString(),
       })
       .eq('id', hike.id)
@@ -90,12 +152,16 @@ export const updateHike = async (hike: HikeData): Promise<HikeData | null> => {
 
     if (error) {
       console.error('Erreur lors de la mise à jour de la randonnée:', error);
+      console.error('ID de la randonnée:', hike.id);
+      console.error('Données envoyées:', row);
       throw error;
     }
 
     return rowToHikeData(data as HikeRow);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Erreur updateHike:', error);
+    console.error('Message d\'erreur:', error?.message);
+    console.error('Détails:', error);
     return null;
   }
 };
