@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { HikeData } from '../types';
-import { MapPin, Clock, Ruler, Calendar, Trash2, Edit2, Eye, TrendingUp, TrendingDown, Search, X, Image } from 'lucide-react';
+import { MapPin, Clock, Ruler, Calendar, Trash2, Edit2, Eye, TrendingUp, TrendingDown, Search, X, Image, Star, Tag, FileText } from 'lucide-react';
 import { SocialShare } from './SocialShare';
 import { SearchBar } from './SearchBar';
 
@@ -41,6 +41,12 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
       
       // Rechercher dans la distance
       if (hike.distance.toString().includes(query)) return true;
+      
+      // Rechercher dans les notes
+      if (hike.notes && hike.notes.toLowerCase().includes(query)) return true;
+      
+      // Rechercher dans les tags
+      if (hike.tags && hike.tags.some(tag => tag.toLowerCase().includes(query))) return true;
       
       return false;
     });
@@ -197,6 +203,77 @@ export const HikeList: React.FC<HikeListProps> = ({ hikes, onDelete, onEdit, onS
                   </div>
                 </div>
               )}
+              
+              {/* Tags */}
+              {hike.tags && hike.tags.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 pt-2">
+                  {hike.tags.slice(0, 4).map((tag, idx) => (
+                    <span
+                      key={idx}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-800 dark:text-emerald-200 rounded-full text-xs font-medium"
+                    >
+                      <Tag className="w-3 h-3" />
+                      {tag}
+                    </span>
+                  ))}
+                  {hike.tags.length > 4 && (
+                    <span className="inline-flex items-center px-2 py-0.5 bg-stone-100 dark:bg-stone-700 text-stone-600 dark:text-stone-400 rounded-full text-xs">
+                      +{hike.tags.length - 4}
+                    </span>
+                  )}
+                </div>
+              )}
+              
+              {/* Notes (aperçu) */}
+              {hike.notes && (
+                <div className="pt-2">
+                  <div className="flex items-start gap-2 text-stone-600 dark:text-stone-400 text-xs">
+                    <FileText className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                    <p className="line-clamp-2 italic">{hike.notes}</p>
+                  </div>
+                </div>
+              )}
+              
+              {/* Notations */}
+              {(hike.difficulty || hike.beauty) && (
+                <div className="flex items-center gap-4 pt-2">
+                  {hike.difficulty && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-stone-500 dark:text-stone-400">Difficulté:</span>
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }, (_, i) => i + 1).map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3 h-3 ${
+                              star <= hike.difficulty!
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'fill-stone-200 dark:fill-stone-700 text-stone-300 dark:text-stone-600'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {hike.beauty && (
+                    <div className="flex items-center gap-1">
+                      <span className="text-xs text-stone-500 dark:text-stone-400">Beauté:</span>
+                      <div className="flex items-center gap-0.5">
+                        {Array.from({ length: 5 }, (_, i) => i + 1).map((star) => (
+                          <Star
+                            key={star}
+                            className={`w-3 h-3 ${
+                              star <= hike.beauty!
+                                ? 'fill-yellow-400 text-yellow-400'
+                                : 'fill-stone-200 dark:fill-stone-700 text-stone-300 dark:text-stone-600'
+                            }`}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 text-xs font-medium pt-2 group-hover:text-emerald-700 dark:group-hover:text-emerald-300 transition-colors">
                 <Eye className="w-4 h-4" />
                 <span>Cliquer pour voir sur la carte</span>

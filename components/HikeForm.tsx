@@ -1,12 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { MapPin, Calendar, Clock, Navigation, Search, Save, X, MousePointerClick, Image, Upload, Trash2 } from 'lucide-react';
+import { MapPin, Calendar, Clock, Navigation, Search, Save, X, MousePointerClick, Image, Upload, Trash2, FileText } from 'lucide-react';
 import { HikeFormData, HikeData } from '../types';
 import { AutocompleteInput } from './AutocompleteInput';
 import { HikeSelector } from './HikeSelector';
+import { StarRating } from './StarRating';
+import { TagsInput } from './TagsInput';
 
 interface HikeFormProps {
   formData: HikeFormData;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+  onTagsChange?: (tags: string[]) => void;
+  onDifficultyChange?: (difficulty: number) => void;
+  onBeautyChange?: (beauty: number) => void;
   onPhotosChange?: (files: File[]) => void;
   onPreview: () => void;
   onSave: () => void;
@@ -25,6 +30,9 @@ interface HikeFormProps {
 export const HikeForm: React.FC<HikeFormProps> = ({ 
   formData, 
   onChange,
+  onTagsChange,
+  onDifficultyChange,
+  onBeautyChange,
   onPhotosChange,
   onPreview, 
   onSave, 
@@ -213,6 +221,49 @@ export const HikeForm: React.FC<HikeFormProps> = ({
             className="w-full h-12 px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-emerald-50/50 dark:bg-emerald-900/30 text-stone-900 dark:text-stone-100 font-medium hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-400"
           />
         </div>
+      </div>
+
+      {/* Section Notes/Description */}
+      <div className="mt-6">
+        <label className="text-xs font-semibold text-stone-500 dark:text-stone-400 uppercase mb-2 flex items-center gap-1">
+          <FileText className="w-3 h-3" /> Notes / Description
+        </label>
+        <textarea
+          name="notes"
+          value={formData.notes || ''}
+          onChange={onChange}
+          placeholder="Décrivez votre randonnée, vos impressions, les points d'intérêt..."
+          rows={4}
+          className="w-full px-3 py-3 border border-stone-300 dark:border-stone-600 rounded-3xl focus:rounded-3xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 focus:outline-none transition-all duration-200 bg-white dark:bg-stone-700 text-stone-800 dark:text-stone-200 hover:border-stone-400 dark:hover:border-stone-500 placeholder:text-stone-400 dark:placeholder:text-stone-500 resize-y"
+        />
+      </div>
+
+      {/* Section Tags */}
+      <div className="mt-6">
+        {onTagsChange && (
+          <TagsInput
+            tags={formData.tags || []}
+            onChange={onTagsChange}
+          />
+        )}
+      </div>
+
+      {/* Section Notations */}
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+        {onDifficultyChange && (
+          <StarRating
+            value={formData.difficulty || 0}
+            onChange={onDifficultyChange}
+            label="Difficulté"
+          />
+        )}
+        {onBeautyChange && (
+          <StarRating
+            value={formData.beauty || 0}
+            onChange={onBeautyChange}
+            label="Beauté du paysage"
+          />
+        )}
       </div>
 
       {/* Section Upload de Photos */}

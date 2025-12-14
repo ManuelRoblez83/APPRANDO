@@ -32,6 +32,10 @@ export interface HikeRow {
     totalDescent: number;
   } | null;
   photos: string[] | null; // URLs des photos
+  notes: string | null; // Description/notes de la randonnée
+  tags: string[] | null; // Tags (montagne, lac, forêt...)
+  difficulty: number | null; // Note de difficulté (1-5 étoiles)
+  beauty: number | null; // Note de beauté (1-5 étoiles)
   created_at?: string;
   updated_at?: string;
 }
@@ -50,6 +54,10 @@ export const rowToHikeData = (row: HikeRow): HikeData => {
     endCoords: row.end_coords || undefined,
     elevationProfile: row.elevation_profile || undefined,
     photos: row.photos || undefined,
+    notes: row.notes || undefined,
+    tags: row.tags || undefined,
+    difficulty: row.difficulty || undefined,
+    beauty: row.beauty || undefined,
   };
 };
 
@@ -67,6 +75,10 @@ export const hikeDataToRow = (hike: HikeData): Omit<HikeRow, 'created_at' | 'upd
     end_coords: hike.endCoords || null,
     elevation_profile: hike.elevationProfile || null,
     photos: hike.photos || null,
+    notes: hike.notes || null,
+    tags: hike.tags || null,
+    difficulty: hike.difficulty || null,
+    beauty: hike.beauty || null,
   };
   
   // Ajouter l'ID seulement s'il est défini

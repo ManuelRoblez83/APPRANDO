@@ -144,6 +144,10 @@ export const updateHike = async (hike: HikeData): Promise<HikeData | null> => {
         end_coords: row.end_coords,
         elevation_profile: row.elevation_profile,
         photos: row.photos,
+        notes: row.notes,
+        tags: row.tags,
+        difficulty: row.difficulty,
+        beauty: row.beauty,
         updated_at: new Date().toISOString(),
       })
       .eq('id', hike.id)

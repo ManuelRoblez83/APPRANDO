@@ -29,6 +29,7 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
   const suggestionsRef = useRef<HTMLDivElement>(null);
   const debounceTimerRef = useRef<number | null>(null);
   const justSelectedRef = useRef<boolean>(false); // Track if user just selected a suggestion
+  const isFocusedRef = useRef<boolean>(false); // Track if input has focus
 
   // Debounced search for suggestions
   useEffect(() => {
@@ -55,12 +56,14 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
       try {
         const results = await getLocationSuggestions(value);
         setSuggestions(results);
-        // Only show suggestions if user is actively typing (not after a selection)
-        if (!justSelectedRef.current) {
+        // Only show suggestions if user is actively typing (not after a selection) AND input has focus
+        if (!justSelectedRef.current && isFocusedRef.current) {
           setShowSuggestions(results.length > 0 && value.length >= 2);
         } else {
           setShowSuggestions(false);
-          justSelectedRef.current = false;
+          if (justSelectedRef.current) {
+            justSelectedRef.current = false;
+          }
         }
         setSelectedIndex(-1);
       } catch (error) {
@@ -178,12 +181,20 @@ export const AutocompleteInput: React.FC<AutocompleteInputProps> = ({
           value={value}
           onChange={onChange}
           onFocus={() => {
+            isFocusedRef.current = true;
             // Show suggestions on focus only if user hasn't just selected one
             if (!justSelectedRef.current && (suggestions.length > 0 || value.length >= 2)) {
               setShowSuggestions(true);
             }
           }}
+          onBlur={() => {
+            // Delay to allow clicking on suggestions
+            setTimeout(() => {
+              isFocusedRef.current = false;
+            }, 200);
+          }}
           onClick={() => {
+            isFocusedRef.current = true;
             // Show suggestions when clicking on input, but not if just selected
             if (!justSelectedRef.current && (suggestions.length > 0 || value.length >= 2)) {
               setShowSuggestions(true);

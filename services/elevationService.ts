@@ -24,22 +24,64 @@ export const getElevations = async (coordinates: Coordinates[]): Promise<number[
     const locations = coordinates.map(coord => `${coord.lat},${coord.lng}`).join('|');
     const url = `https://api.open-elevation.com/api/v1/lookup?locations=${locations}`;
     
-    const response = await fetch(url);
-    const data = await response.json();
+    // Add timeout to prevent hanging requests
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
     
-    if (data.results && Array.isArray(data.results)) {
-      return data.results.map((result: any) => result.elevation || 0);
+    try {
+      const response = await fetch(url, { signal: controller.signal });
+      clearTimeout(timeoutId);
+      
+      const data = await response.json();
+      
+      if (data.results && Array.isArray(data.results)) {
+        return data.results.map((result: any) => result.elevation || 0);
+      }
+      
+      return [];
+    } catch (fetchError: any) {
+      clearTimeout(timeoutId);
+      if (fetchError.name === 'AbortError') {
+        console.error('Elevation API timeout - request took too long');
+      } else {
+        console.error('Error fetching elevation data:', fetchError);
+      }
+      return [];
     }
-    
-    return [];
   } catch (error) {
-    console.error('Error fetching elevation data:', error);
+    console.error('Error in getElevations:', error);
     return [];
   }
 };
 
 /**
+ * Sample coordinates to reduce API calls and improve performance
+ * Takes every Nth point based on total distance
+ */
+const sampleCoordinates = (coordinates: Coordinates[], maxPoints: number = 100): Coordinates[] => {
+  if (coordinates.length <= maxPoints) return coordinates;
+  
+  const step = Math.ceil(coordinates.length / maxPoints);
+  const sampled: Coordinates[] = [];
+  
+  // Always include first and last point
+  sampled.push(coordinates[0]);
+  
+  for (let i = step; i < coordinates.length - step; i += step) {
+    sampled.push(coordinates[i]);
+  }
+  
+  // Always include last point
+  if (sampled[sampled.length - 1] !== coordinates[coordinates.length - 1]) {
+    sampled.push(coordinates[coordinates.length - 1]);
+  }
+  
+  return sampled;
+};
+
+/**
  * Calculate elevation profile and statistics from coordinates
+ * Automatically samples coordinates for long routes to improve performance
  */
 export const calculateElevationProfile = async (
   coordinates: Coordinates[]
@@ -47,19 +89,47 @@ export const calculateElevationProfile = async (
   if (coordinates.length === 0) return null;
 
   try {
-    // Get elevations for all coordinates
-    const elevations = await getElevations(coordinates);
+    // Sample coordinates for routes with many points to improve performance
+    // Use max 100 points for elevation calculation (more than enough for accurate profile)
+    const sampledCoords = sampleCoordinates(coordinates, 100);
     
-    if (elevations.length !== coordinates.length) {
+    // Get elevations for sampled coordinates
+    const elevations = await getElevations(sampledCoords);
+    
+    if (elevations.length !== sampledCoords.length) {
       console.warn('Elevation data incomplete');
       return null;
     }
 
-    // Create elevation points
-    const points: ElevationPoint[] = coordinates.map((coord, index) => ({
+    // Create elevation points from sampled coordinates
+    const sampledPoints: ElevationPoint[] = sampledCoords.map((coord, index) => ({
       ...coord,
       elevation: elevations[index] || 0,
     }));
+    
+    // Interpolate elevations for all original coordinates
+    // This gives us elevation data for all points while only querying a subset
+    const points: ElevationPoint[] = coordinates.map((coord) => {
+      // Find the two closest sampled points
+      let closestIndex = 0;
+      let minDistance = Infinity;
+      
+      for (let i = 0; i < sampledCoords.length; i++) {
+        const dist = Math.sqrt(
+          Math.pow(coord.lat - sampledCoords[i].lat, 2) + 
+          Math.pow(coord.lng - sampledCoords[i].lng, 2)
+        );
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIndex = i;
+        }
+      }
+      
+      return {
+        ...coord,
+        elevation: sampledPoints[closestIndex].elevation,
+      };
+    });
 
     // Calculate statistics
     const minElevation = Math.min(...elevations);

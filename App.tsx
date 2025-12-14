@@ -19,8 +19,16 @@ import { supabase } from './lib/supabase';
 
 const App: React.FC = () => {
   // État pour afficher la page d'accueil ou l'application principale
-  const [showHomePage, setShowHomePage] = useState(true);
-  const [showUserProfile, setShowUserProfile] = useState(false);
+  // Restaurer l'état depuis localStorage pour persister après rafraîchissement
+  const [showHomePage, setShowHomePage] = useState(() => {
+    const saved = localStorage.getItem('randotrack_view');
+    // Si l'utilisateur était sur l'app ou le profil, ne pas revenir à l'accueil
+    return saved !== 'app' && saved !== 'profile';
+  });
+  const [showUserProfile, setShowUserProfile] = useState(() => {
+    const saved = localStorage.getItem('randotrack_view');
+    return saved === 'profile';
+  });
   const [refreshProfileKey, setRefreshProfileKey] = useState(0);
   // State for the list of saved hikes
   const [hikes, setHikes] = useState<HikeData[]>([]);
@@ -35,6 +43,10 @@ const App: React.FC = () => {
     distance: '',
     duration: '',
     photos: [],
+    notes: '',
+    tags: [],
+    difficulty: undefined,
+    beauty: undefined,
   });
   const [hikePhotos, setHikePhotos] = useState<string[]>([]); // Photos existantes de la randonnée en cours d'édition
 
@@ -54,6 +66,17 @@ const App: React.FC = () => {
   const [editingHikeId, setEditingHikeId] = useState<string | null>(null);
   const [selectionMode, setSelectionMode] = useState<'start' | 'end' | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+
+  // Sauvegarder l'état de la vue dans localStorage quand il change
+  useEffect(() => {
+    if (showHomePage) {
+      localStorage.setItem('randotrack_view', 'home');
+    } else if (showUserProfile) {
+      localStorage.setItem('randotrack_view', 'profile');
+    } else {
+      localStorage.setItem('randotrack_view', 'app');
+    }
+  }, [showHomePage, showUserProfile]);
 
   // Charger les randonnées depuis Supabase au montage du composant et lors des changements d'auth
   useEffect(() => {
@@ -86,7 +109,7 @@ const App: React.FC = () => {
   }, []);
 
   // Handle form input changes
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     
     // Reset save validity and clear calculated values if location changes
@@ -103,6 +126,21 @@ const App: React.FC = () => {
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  // Handle tags change
+  const handleTagsChange = (tags: string[]) => {
+    setFormData((prev) => ({ ...prev, tags }));
+  };
+
+  // Handle difficulty change
+  const handleDifficultyChange = (difficulty: number) => {
+    setFormData((prev) => ({ ...prev, difficulty }));
+  };
+
+  // Handle beauty change
+  const handleBeautyChange = (beauty: number) => {
+    setFormData((prev) => ({ ...prev, beauty }));
   };
 
   // Handle photos change
@@ -141,12 +179,25 @@ const App: React.FC = () => {
       ]);
 
       if (start && end) {
+        console.log('📍 Coordonnées récupérées:', { start, end });
         setPreviewCoords({ start, end });
         
         // Get pedestrian route
         try {
+          console.log('🚀 Appel de getRoute...');
           const route = await getRoute(start, end);
+          console.log('📊 Résultat de getRoute:', route ? 'Itinéraire trouvé' : 'Aucun itinéraire');
           if (route) {
+            // Vérifier si c'est un fallback (pas de steps signifie probablement un fallback)
+            const isFallback = !route.steps && route.coordinates.length <= 10;
+            
+            if (isFallback) {
+              toast("⚠️ Le service de routage est temporairement indisponible. Itinéraire approximatif affiché (ligne droite).", {
+                icon: '⚠️',
+                duration: 6000,
+              });
+            }
+            
             // Calculate elevation profile for the route
             try {
               const elevationProfile = await calculateElevationProfile(route.coordinates);
@@ -174,15 +225,21 @@ const App: React.FC = () => {
             }));
             setIsFormValidForSave(true);
           } else {
-            // No pedestrian route found - clear route data and show message
+            // Route is null - no route found (not even fallback)
+            // This means OSRM returned NoRoute (no pedestrian path exists)
             setRouteData(null);
             toast.error("Aucun itinéraire pédestre n'a pu être trouvé entre ces deux points. Veuillez vérifier que les lieux sont accessibles à pied.");
             setIsFormValidForSave(false);
           }
         } catch (routeError) {
           console.warn("Could not fetch route details:", routeError);
+          // Si getRoute a retourné un fallback, il sera dans route, sinon on affiche une erreur
+          // Le fallback est maintenant géré dans routingService.ts
           setRouteData(null);
-          toast.error("Impossible de calculer un itinéraire pédestre. Veuillez vérifier votre connexion ou essayer avec d'autres points.");
+          toast.error("Le service de routage est temporairement indisponible. L'itinéraire affiché sera approximatif (ligne droite).", {
+            duration: 5000,
+            icon: '⚠️',
+          });
           setIsFormValidForSave(false);
         }
       } else {
@@ -380,6 +437,10 @@ const App: React.FC = () => {
         endCoords: endCoords,
         elevationProfile: elevationProfile,
         photos: photoUrls,
+        notes: formData.notes || undefined,
+        tags: formData.tags && formData.tags.length > 0 ? formData.tags : undefined,
+        difficulty: formData.difficulty,
+        beauty: formData.beauty,
       };
 
       if (hikeId && hikeId.trim() !== '') {
@@ -459,6 +520,10 @@ const App: React.FC = () => {
             distance: '',
             duration: '',
             photos: [],
+            notes: '',
+            tags: [],
+            difficulty: undefined,
+            beauty: undefined,
           });
           setHikePhotos([]);
           setPreviewCoords({});
@@ -566,6 +631,10 @@ const App: React.FC = () => {
       distance: hike.distance.toString(),
       duration: hike.duration,
       photos: [],
+      notes: hike.notes || '',
+      tags: hike.tags || [],
+      difficulty: hike.difficulty,
+      beauty: hike.beauty,
     });
     setHikePhotos(hike.photos || []);
     
@@ -710,6 +779,10 @@ const App: React.FC = () => {
       distance: '',
       duration: '',
       photos: [],
+      notes: '',
+      tags: [],
+      difficulty: undefined,
+      beauty: undefined,
     });
     setHikePhotos([]);
     setPreviewCoords({});
@@ -808,6 +881,9 @@ const App: React.FC = () => {
               <HikeForm 
                 formData={formData}
                 onChange={handleInputChange}
+                onTagsChange={handleTagsChange}
+                onDifficultyChange={handleDifficultyChange}
+                onBeautyChange={handleBeautyChange}
                 onPhotosChange={handlePhotosChange}
                 onPreview={handlePreview}
                 onSave={handleSave}

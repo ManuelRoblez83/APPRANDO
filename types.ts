@@ -20,6 +20,10 @@ export interface HikeData {
     totalDescent: number;
   };
   photos?: string[]; // URLs des photos
+  notes?: string; // Description/notes de la randonnée
+  tags?: string[]; // Tags (montagne, lac, forêt...)
+  difficulty?: number; // Note de difficulté (1-5 étoiles)
+  beauty?: number; // Note de beauté (1-5 étoiles)
 }
 
 export interface HikeFormData {
@@ -30,4 +34,8 @@ export interface HikeFormData {
   distance: string;
   duration: string;
   photos?: File[]; // Fichiers photos à uploader
+  notes?: string; // Description/notes de la randonnée
+  tags?: string[]; // Tags (montagne, lac, forêt...)
+  difficulty?: number; // Note de difficulté (1-5 étoiles)
+  beauty?: number; // Note de beauté (1-5 étoiles)
 }
