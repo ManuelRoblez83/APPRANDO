@@ -25,23 +25,23 @@ DROP POLICY IF EXISTS "Users can delete own profile" ON user_profiles;
 -- Politique pour permettre aux utilisateurs de lire leur propre profil
 CREATE POLICY "Users can view own profile" ON user_profiles
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs d'insérer leur propre profil
 CREATE POLICY "Users can insert own profile" ON user_profiles
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs de mettre à jour leur propre profil
 CREATE POLICY "Users can update own profile" ON user_profiles
   FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs de supprimer leur propre profil
 CREATE POLICY "Users can delete own profile" ON user_profiles
   FOR DELETE
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Table pour les randonnées favorites (relation many-to-many)
 CREATE TABLE IF NOT EXISTS favorite_hikes (
@@ -67,17 +67,17 @@ DROP POLICY IF EXISTS "Users can delete own favorite hikes" ON favorite_hikes;
 -- Politique pour permettre aux utilisateurs de lire leurs propres randonnées favorites
 CREATE POLICY "Users can view own favorite hikes" ON favorite_hikes
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs d'ajouter leurs propres randonnées favorites
 CREATE POLICY "Users can insert own favorite hikes" ON favorite_hikes
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs de supprimer leurs propres randonnées favorites
 CREATE POLICY "Users can delete own favorite hikes" ON favorite_hikes
   FOR DELETE
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Trigger pour mettre à jour updated_at automatiquement
 DROP TRIGGER IF EXISTS update_user_profiles_updated_at ON user_profiles;
@@ -86,6 +86,8 @@ CREATE TRIGGER update_user_profiles_updated_at
   BEFORE UPDATE ON user_profiles
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+
+
 
 
 

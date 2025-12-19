@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { MapPin, Calendar, Clock, Navigation, Search, Save, X, MousePointerClick, Image, Upload, Trash2, FileText } from 'lucide-react';
+import { MapPin, Calendar, Clock, Navigation, Search, Save, X, MousePointerClick, Image, Upload, Trash2, FileText, Globe } from 'lucide-react';
 import { HikeFormData, HikeData } from '../types';
 import { AutocompleteInput } from './AutocompleteInput';
 import { HikeSelector } from './HikeSelector';
@@ -13,6 +13,7 @@ interface HikeFormProps {
   onDifficultyChange?: (difficulty: number) => void;
   onBeautyChange?: (beauty: number) => void;
   onPhotosChange?: (files: File[]) => void;
+  onPublicChange?: (isPublic: boolean) => void;
   onPreview: () => void;
   onSave: () => void;
   onCancel?: () => void;
@@ -34,6 +35,7 @@ export const HikeForm: React.FC<HikeFormProps> = ({
   onDifficultyChange,
   onBeautyChange,
   onPhotosChange,
+  onPublicChange,
   onPreview, 
   onSave, 
   onCancel,
@@ -265,6 +267,31 @@ export const HikeForm: React.FC<HikeFormProps> = ({
           />
         )}
       </div>
+
+      {/* Option Rendre publique */}
+      {onPublicChange && (
+        <div className="mt-6">
+          <label className="flex items-center gap-3 p-4 bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl cursor-pointer hover:bg-emerald-100 dark:hover:bg-emerald-900/30 transition-colors">
+            <input
+              type="checkbox"
+              checked={formData.isPublic || false}
+              onChange={(e) => onPublicChange(e.target.checked)}
+              className="w-5 h-5 text-emerald-600 border-stone-300 rounded focus:ring-emerald-500 focus:ring-2"
+            />
+            <div className="flex items-center gap-2 flex-1">
+              <Globe className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+              <div>
+                <span className="font-semibold text-stone-800 dark:text-stone-200">
+                  Rendre cette randonnée publique
+                </span>
+                <p className="text-xs text-stone-600 dark:text-stone-400 mt-0.5">
+                  Les autres utilisateurs pourront voir, liker et commenter votre randonnée
+                </p>
+              </div>
+            </div>
+          </label>
+        </div>
+      )}
 
       {/* Section Upload de Photos */}
       <div className="mt-6">

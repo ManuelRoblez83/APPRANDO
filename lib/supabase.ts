@@ -17,6 +17,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 // Types pour la base de données
 export interface HikeRow {
   id: string;
+  user_id: string | null;
   name: string;
   date: string;
   start_location: string;
@@ -36,6 +37,7 @@ export interface HikeRow {
   tags: string[] | null; // Tags (montagne, lac, forêt...)
   difficulty: number | null; // Note de difficulté (1-5 étoiles)
   beauty: number | null; // Note de beauté (1-5 étoiles)
+  is_public: boolean | null; // Si la randonnée est publique
   created_at?: string;
   updated_at?: string;
 }
@@ -58,6 +60,8 @@ export const rowToHikeData = (row: HikeRow): HikeData => {
     tags: row.tags || undefined,
     difficulty: row.difficulty || undefined,
     beauty: row.beauty || undefined,
+    isPublic: row.is_public || false,
+    userId: row.user_id || undefined,
   };
 };
 
@@ -79,11 +83,17 @@ export const hikeDataToRow = (hike: HikeData): Omit<HikeRow, 'created_at' | 'upd
     tags: hike.tags || null,
     difficulty: hike.difficulty || null,
     beauty: hike.beauty || null,
+    is_public: hike.isPublic || false,
   };
   
   // Ajouter l'ID seulement s'il est défini
   if (hike.id) {
     row.id = hike.id;
+  }
+  
+  // Ajouter user_id seulement s'il est défini
+  if (hike.userId) {
+    row.user_id = hike.userId;
   }
   
   return row;

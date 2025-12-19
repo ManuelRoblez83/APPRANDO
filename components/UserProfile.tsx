@@ -22,6 +22,9 @@ import { getCurrentUser, updatePassword, updateEmail, signOut, User as SupabaseU
 import { calculateUserStatistics, UserStatistics } from '../services/userStatsService';
 import { fetchHikes, deleteHike } from '../services/hikeService';
 import { HikeData } from '../types';
+import { PerformanceHistory } from './PerformanceHistory';
+import { CommunityComparison } from './CommunityComparison';
+import { PerformanceHistory as PerformanceHistoryData } from '../services/performanceService';
 import { 
   getProfilePictureUrl, 
   uploadProfilePicture, 
@@ -76,6 +79,9 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
   // États pour les randonnées favorites
   const [allHikes, setAllHikes] = useState<HikeData[]>([]);
   const [favoriteHikeIds, setFavoriteHikeIds] = useState<string[]>([]);
+
+  // État pour l'historique des performances
+  const [performanceHistory, setPerformanceHistory] = useState<PerformanceHistoryData | null>(null);
 
   // Charger les données utilisateur
   useEffect(() => {
@@ -765,6 +771,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ onBack }) => {
                     </div>
                   </div>
                 )}
+
+                {/* Historique des performances */}
+                <PerformanceHistory onDataLoaded={setPerformanceHistory} />
+
+                {/* Comparaison avec la communauté */}
+                <CommunityComparison userHistory={performanceHistory} />
               </div>
             )}
 

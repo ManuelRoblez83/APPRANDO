@@ -100,35 +100,44 @@ DROP POLICY IF EXISTS "Users can insert own hikes" ON hikes;
 DROP POLICY IF EXISTS "Users can update own hikes" ON hikes;
 DROP POLICY IF EXISTS "Users can delete own hikes" ON hikes;
 
--- Politique pour permettre aux utilisateurs de lire leurs propres randonnées
-CREATE POLICY "Users can view own hikes" ON hikes
+-- Politique combinée pour permettre aux utilisateurs de lire leurs propres randonnées
+-- et à tout le monde de voir les randonnées publiques
+-- (Une seule politique est plus performante que plusieurs politiques permissives)
+CREATE POLICY "Users can view own hikes or public hikes" ON hikes
   FOR SELECT
-  USING (auth.uid() = user_id);
+  USING (
+    (select auth.uid()) = user_id 
+    OR is_public = true
+  );
 
 -- Politique pour permettre aux utilisateurs d'insérer leurs propres randonnées
 CREATE POLICY "Users can insert own hikes" ON hikes
   FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs de mettre à jour leurs propres randonnées
 CREATE POLICY "Users can update own hikes" ON hikes
   FOR UPDATE
-  USING (auth.uid() = user_id)
-  WITH CHECK (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id)
+  WITH CHECK ((select auth.uid()) = user_id);
 
 -- Politique pour permettre aux utilisateurs de supprimer leurs propres randonnées
 CREATE POLICY "Users can delete own hikes" ON hikes
   FOR DELETE
-  USING (auth.uid() = user_id);
+  USING ((select auth.uid()) = user_id);
 
 -- Fonction pour mettre à jour automatiquement updated_at
 CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
 BEGIN
   NEW.updated_at = TIMEZONE('utc', NOW());
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$;
 
 -- Supprimer le trigger s'il existe déjà
 DROP TRIGGER IF EXISTS update_hikes_updated_at ON hikes;

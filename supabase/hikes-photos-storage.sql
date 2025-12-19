@@ -22,7 +22,7 @@ CREATE POLICY "Users can upload their own hike photos"
 ON storage.objects FOR INSERT
 WITH CHECK (
   bucket_id = 'hikes-photos' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
+  AND (select auth.uid())::text = (storage.foldername(name))[1]
 );
 
 -- Politique pour permettre aux utilisateurs de mettre à jour leurs propres photos de randonnées
@@ -30,7 +30,7 @@ CREATE POLICY "Users can update their own hike photos"
 ON storage.objects FOR UPDATE
 USING (
   bucket_id = 'hikes-photos' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
+  AND (select auth.uid())::text = (storage.foldername(name))[1]
 );
 
 -- Politique pour permettre aux utilisateurs de supprimer leurs propres photos de randonnées
@@ -38,5 +38,5 @@ CREATE POLICY "Users can delete their own hike photos"
 ON storage.objects FOR DELETE
 USING (
   bucket_id = 'hikes-photos' 
-  AND auth.uid()::text = (storage.foldername(name))[1]
+  AND (select auth.uid())::text = (storage.foldername(name))[1]
 );

@@ -21,6 +21,21 @@ Le schéma a été modifié pour :
    - Confirmation d'email requise ou non
    - Templates d'email personnalisés
 
+## Étape 2.5 : Activer la Protection contre les Mots de Passe Compromis ⚠️ IMPORTANT
+
+**🔒 Sécurité** : Il est fortement recommandé d'activer la protection contre les mots de passe compromis.
+
+**⚠️ Prérequis** : Cette fonctionnalité nécessite un plan **Pro** ou supérieur (non disponible sur le plan Free).
+
+1. Dans votre projet Supabase, allez dans **Authentication** > **Settings** (⚙️)
+   - **Important** : C'est dans "Settings", pas "Policies"
+2. Faites défiler jusqu'à la section **"Password Security"**
+3. Recherchez l'option **"Prevent leaked passwords"** ou **"Leaked password protection"**
+4. **Activez** le toggle/switch pour cette fonctionnalité
+5. La fonctionnalité fonctionne automatiquement en mode strict (rejet des mots de passe compromis)
+
+📖 **Guide détaillé** : Consultez `SUPABASE_PASSWORD_SECURITY.md` pour plus d'informations et le dépannage.
+
 ## Étape 3 : Tester l'authentification
 
 Une fois le schéma mis à jour :
@@ -47,6 +62,8 @@ Une fois le schéma mis à jour :
 3. Réactiver RLS
 
 Ou simplement créer de nouvelles randonnées après vous être connecté.
+
+
 
 
 

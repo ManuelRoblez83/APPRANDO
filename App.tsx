@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
-import { Mountain, Map as MapIcon, List, AlertTriangle, X } from 'lucide-react';
+import { Mountain, Map as MapIcon, List, AlertTriangle, X, Users, Compass } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import { HomePage } from './components/HomePage';
 import { UserProfile } from './components/UserProfile';
@@ -9,6 +9,9 @@ import { MapDisplay } from './components/MapDisplay';
 import { HikeList } from './components/HikeList';
 import { AuthButton } from './components/AuthButton';
 import { ThemeToggle } from './components/ThemeToggle';
+import { CommunityHikes } from './components/CommunityHikes';
+import { FeedPage } from './components/FeedPage';
+import { UserSuggestions } from './components/UserSuggestions';
 import { HikeData, HikeFormData, Coordinates } from './types';
 import { getCoordinates, getAddressFromCoordinates } from './services/geocodingService';
 import { getRoute, RouteData, RoutePoint, formatDistance, formatDuration, calculateDistance, estimateWalkingDuration, calculateRealisticWalkingDuration } from './services/routingService';
@@ -29,6 +32,13 @@ const App: React.FC = () => {
     const saved = localStorage.getItem('randotrack_view');
     return saved === 'profile';
   });
+  const [currentView, setCurrentView] = useState<'app' | 'community' | 'feed'>(() => {
+    const saved = localStorage.getItem('randotrack_view');
+    if (saved === 'community' || saved === 'feed') {
+      return saved as 'community' | 'feed';
+    }
+    return 'app';
+  });
   const [refreshProfileKey, setRefreshProfileKey] = useState(0);
   // State for the list of saved hikes
   const [hikes, setHikes] = useState<HikeData[]>([]);
@@ -47,6 +57,7 @@ const App: React.FC = () => {
     tags: [],
     difficulty: undefined,
     beauty: undefined,
+    isPublic: false,
   });
   const [hikePhotos, setHikePhotos] = useState<string[]>([]); // Photos existantes de la randonnée en cours d'édition
 
@@ -74,9 +85,9 @@ const App: React.FC = () => {
     } else if (showUserProfile) {
       localStorage.setItem('randotrack_view', 'profile');
     } else {
-      localStorage.setItem('randotrack_view', 'app');
+      localStorage.setItem('randotrack_view', currentView);
     }
-  }, [showHomePage, showUserProfile]);
+  }, [showHomePage, showUserProfile, currentView]);
 
   // Charger les randonnées depuis Supabase au montage du composant et lors des changements d'auth
   useEffect(() => {
@@ -141,6 +152,11 @@ const App: React.FC = () => {
   // Handle beauty change
   const handleBeautyChange = (beauty: number) => {
     setFormData((prev) => ({ ...prev, beauty }));
+  };
+
+  // Handle public change
+  const handlePublicChange = (isPublic: boolean) => {
+    setFormData((prev) => ({ ...prev, isPublic }));
   };
 
   // Handle photos change
@@ -441,6 +457,7 @@ const App: React.FC = () => {
         tags: formData.tags && formData.tags.length > 0 ? formData.tags : undefined,
         difficulty: formData.difficulty,
         beauty: formData.beauty,
+        isPublic: formData.isPublic || false,
       };
 
       if (hikeId && hikeId.trim() !== '') {
@@ -524,6 +541,7 @@ const App: React.FC = () => {
             tags: [],
             difficulty: undefined,
             beauty: undefined,
+            isPublic: false,
           });
           setHikePhotos([]);
           setPreviewCoords({});
@@ -635,6 +653,7 @@ const App: React.FC = () => {
       tags: hike.tags || [],
       difficulty: hike.difficulty,
       beauty: hike.beauty,
+      isPublic: hike.isPublic || false,
     });
     setHikePhotos(hike.photos || []);
     
@@ -745,6 +764,11 @@ const App: React.FC = () => {
             distance: '',
             duration: '',
             photos: [],
+            notes: '',
+            tags: [],
+            difficulty: undefined,
+            beauty: undefined,
+            isPublic: false,
           });
           setHikePhotos([]);
           setPreviewCoords({});
@@ -783,6 +807,7 @@ const App: React.FC = () => {
       tags: [],
       difficulty: undefined,
       beauty: undefined,
+      isPublic: false,
     });
     setHikePhotos([]);
     setPreviewCoords({});
@@ -812,24 +837,62 @@ const App: React.FC = () => {
     <div className="min-h-screen pb-12 bg-gradient-to-b from-stone-50 to-stone-100 dark:from-stone-900 dark:to-stone-800 transition-colors duration-500">
       {/* Header */}
       <header className="bg-emerald-900 dark:bg-stone-800 text-white shadow-lg sticky top-0 z-50 backdrop-blur-sm bg-opacity-95 dark:bg-opacity-95 border-b border-emerald-800/20 dark:border-stone-700/20">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <button
-            onClick={() => setShowHomePage(true)}
-            className="flex items-center gap-2 hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95 group"
-          >
-            <Mountain className="w-8 h-8 text-emerald-300 dark:text-emerald-400 transition-transform duration-300 group-hover:rotate-12" />
-            <h1 className="text-2xl font-bold tracking-tight">RandoTrack</h1>
-          </button>
-          <div className="flex items-center gap-4">
-            <div className="text-emerald-200 dark:text-stone-300 text-sm hidden lg:block animate-fade-in">
-              Planifiez votre prochaine aventure
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between mb-3">
+            <button
+              onClick={() => setShowHomePage(true)}
+              className="flex items-center gap-2 hover:opacity-80 transition-all duration-300 hover:scale-105 active:scale-95 group"
+            >
+              <Mountain className="w-8 h-8 text-emerald-300 dark:text-emerald-400 transition-transform duration-300 group-hover:rotate-12" />
+              <h1 className="text-2xl font-bold tracking-tight">RandoTrack</h1>
+            </button>
+            <div className="flex items-center gap-4">
+              <div className="text-emerald-200 dark:text-stone-300 text-sm hidden lg:block animate-fade-in">
+                Planifiez votre prochaine aventure
+              </div>
+              <ThemeToggle />
+              <AuthButton 
+                onShowProfile={() => setShowUserProfile(true)}
+                refreshProfilePicture={refreshProfileKey}
+              />
             </div>
-            <ThemeToggle />
-            <AuthButton 
-              onShowProfile={() => setShowUserProfile(true)}
-              refreshProfilePicture={refreshProfileKey}
-            />
           </div>
+          {/* Navigation */}
+          <nav className="flex items-center gap-2">
+            <button
+              onClick={() => setCurrentView('app')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                currentView === 'app'
+                  ? 'bg-emerald-800 dark:bg-emerald-700 text-white'
+                  : 'text-emerald-200 dark:text-stone-300 hover:bg-emerald-800/50'
+              }`}
+            >
+              <List className="w-4 h-4 inline mr-2" />
+              Mes Randonnées
+            </button>
+            <button
+              onClick={() => setCurrentView('community')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                currentView === 'community'
+                  ? 'bg-emerald-800 dark:bg-emerald-700 text-white'
+                  : 'text-emerald-200 dark:text-stone-300 hover:bg-emerald-800/50'
+              }`}
+            >
+              <Compass className="w-4 h-4 inline mr-2" />
+              Découvrir
+            </button>
+            <button
+              onClick={() => setCurrentView('feed')}
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                currentView === 'feed'
+                  ? 'bg-emerald-800 dark:bg-emerald-700 text-white'
+                  : 'text-emerald-200 dark:text-stone-300 hover:bg-emerald-800/50'
+              }`}
+            >
+              <Users className="w-4 h-4 inline mr-2" />
+              Fil d'Actualité
+            </button>
+          </nav>
         </div>
       </header>
 
@@ -872,9 +935,21 @@ const App: React.FC = () => {
       />
 
       <main className="max-w-7xl mx-auto px-4 py-8 space-y-8 animate-fade-in-up">
-        
-        {/* Top Section: Form and Map */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {currentView === 'community' ? (
+          <CommunityHikes onShowHikeOnMap={handleShowOnMap} />
+        ) : currentView === 'feed' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <FeedPage onShowHikeOnMap={handleShowOnMap} />
+            </div>
+            <div>
+              <UserSuggestions />
+            </div>
+          </div>
+        ) : (
+          <>
+            {/* Top Section: Form and Map */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column: Form */}
           <div className="space-y-6">
             <div className="animate-scale-in">
@@ -885,6 +960,7 @@ const App: React.FC = () => {
                 onDifficultyChange={handleDifficultyChange}
                 onBeautyChange={handleBeautyChange}
                 onPhotosChange={handlePhotosChange}
+                onPublicChange={handlePublicChange}
                 onPreview={handlePreview}
                 onSave={handleSave}
                 onCancel={editingHikeId ? handleCancelEdit : undefined}
@@ -950,29 +1026,31 @@ const App: React.FC = () => {
           </div>
         </div>
 
-        {/* Bottom Section: List */}
-        <div className="pt-8 border-t border-stone-200 dark:border-stone-700 animate-fade-in">
-          <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-6 flex items-center gap-2">
-            <List className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
-            Vos Randonnées Enregistrées
-            {isLoadingHikes && (
-              <span className="text-sm text-stone-500 dark:text-stone-400 ml-2 animate-pulse">(Chargement...)</span>
-            )}
-          </h2>
-          {isLoadingHikes ? (
-            <div className="text-center py-12 bg-white dark:bg-stone-800 rounded-3xl border border-dashed border-stone-300 dark:border-stone-700 shadow-sm">
-              <span className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent inline-block"></span>
-              <p className="text-stone-400 dark:text-stone-500 mt-3 font-medium">Chargement des randonnées...</p>
+            {/* Bottom Section: List */}
+            <div className="pt-8 border-t border-stone-200 dark:border-stone-700 animate-fade-in">
+              <h2 className="text-2xl font-bold text-stone-800 dark:text-stone-100 mb-6 flex items-center gap-2">
+                <List className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                Vos Randonnées Enregistrées
+                {isLoadingHikes && (
+                  <span className="text-sm text-stone-500 dark:text-stone-400 ml-2 animate-pulse">(Chargement...)</span>
+                )}
+              </h2>
+              {isLoadingHikes ? (
+                <div className="text-center py-12 bg-white dark:bg-stone-800 rounded-3xl border border-dashed border-stone-300 dark:border-stone-700 shadow-sm">
+                  <span className="animate-spin rounded-full h-8 w-8 border-2 border-emerald-500 border-t-transparent inline-block"></span>
+                  <p className="text-stone-400 dark:text-stone-500 mt-3 font-medium">Chargement des randonnées...</p>
+                </div>
+              ) : (
+                <HikeList 
+                  hikes={hikes} 
+                  onDelete={handleDelete}
+                  onEdit={handleEdit}
+                  onShowOnMap={handleShowOnMap}
+                />
+              )}
             </div>
-          ) : (
-            <HikeList 
-              hikes={hikes} 
-              onDelete={handleDelete}
-              onEdit={handleEdit}
-              onShowOnMap={handleShowOnMap}
-            />
-          )}
-        </div>
+          </>
+        )}
 
       </main>
 

@@ -14,7 +14,19 @@ export const signUp = async (email: string, password: string) => {
       password,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Améliorer le message d'erreur pour les mots de passe compromis
+      if (error.message.includes('compromised') || 
+          error.message.includes('breach') ||
+          error.message.includes('pwned') ||
+          error.message.toLowerCase().includes('leaked')) {
+        throw new Error(
+          'Ce mot de passe a été compromis dans une fuite de données. ' +
+          'Veuillez choisir un mot de passe plus sécurisé et unique.'
+        );
+      }
+      throw error;
+    }
 
     return { user: data.user, error: null };
   } catch (error: any) {
@@ -74,7 +86,19 @@ export const updatePassword = async (newPassword: string): Promise<{ error: stri
       password: newPassword,
     });
 
-    if (error) throw error;
+    if (error) {
+      // Améliorer le message d'erreur pour les mots de passe compromis
+      if (error.message.includes('compromised') || 
+          error.message.includes('breach') ||
+          error.message.includes('pwned') ||
+          error.message.toLowerCase().includes('leaked')) {
+        throw new Error(
+          'Ce mot de passe a été compromis dans une fuite de données. ' +
+          'Veuillez choisir un mot de passe plus sécurisé et unique.'
+        );
+      }
+      throw error;
+    }
     return { error: null };
   } catch (error: any) {
     return { error: error.message || 'Erreur lors de la modification du mot de passe' };
