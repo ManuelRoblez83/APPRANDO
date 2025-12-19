@@ -328,3 +328,4 @@ export const PerformanceHistory: React.FC<PerformanceHistoryProps> = ({ onDataLo
     </div>
   );
 };
+

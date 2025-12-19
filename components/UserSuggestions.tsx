@@ -115,3 +115,4 @@ export const UserSuggestions: React.FC<UserSuggestionsProps> = ({
     </div>
   );
 };
+

@@ -278,3 +278,4 @@ export const CommunityComparison: React.FC<CommunityComparisonProps> = ({ userHi
     </div>
   );
 };
+

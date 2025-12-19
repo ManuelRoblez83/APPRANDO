@@ -118,3 +118,4 @@ Les graphiques sont créés avec SVG natif (pas de dépendances externes) :
 Les données sont recalculées à chaque ouverture de l'onglet Statistiques. Pour forcer une mise à jour :
 1. Fermez et rouvrez l'onglet Statistiques
 2. Les données seront recalculées automatiquement
+

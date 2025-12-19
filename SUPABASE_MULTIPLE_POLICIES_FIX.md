@@ -179,3 +179,4 @@ En fusionnant en une seule politique avec `OR` :
 - Le planificateur peut **optimiser** la condition
 - Une seule évaluation au lieu de plusieurs
 - **Meilleure performance** à grande échelle
+

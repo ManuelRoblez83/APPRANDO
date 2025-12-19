@@ -279,3 +279,4 @@ export const compareWithCommunity = async (): Promise<{
     },
   };
 };
+

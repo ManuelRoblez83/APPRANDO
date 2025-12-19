@@ -132,3 +132,4 @@ Cette optimisation est compatible avec :
 En PostgreSQL, quand vous utilisez `(select auth.uid())`, le planificateur de requêtes reconnaît que c'est une sous-requête stable et l'évalue une seule fois au début de la requête, puis réutilise le résultat pour toutes les lignes.
 
 C'est une optimisation recommandée par Supabase et PostgreSQL pour les politiques RLS.
+

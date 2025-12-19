@@ -111,3 +111,4 @@ export const FollowButton: React.FC<FollowButtonProps> = ({
     </button>
   );
 };
+

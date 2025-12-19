@@ -50,3 +50,4 @@ END $$;
 CREATE INDEX IF NOT EXISTS idx_hikes_tags ON hikes USING GIN (tags);
 
 
+

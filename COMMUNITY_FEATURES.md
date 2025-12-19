@@ -99,3 +99,4 @@ Toutes les fonctionnalités respectent les politiques RLS de Supabase :
 - Les randonnées privées (non publiques) restent visibles uniquement par leur propriétaire
 - Les utilisateurs peuvent rendre leurs randonnées publiques ou privées à tout moment
 - Le système de suggestions se base sur les utilisateurs ayant des randonnées publiques
+

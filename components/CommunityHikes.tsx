@@ -340,3 +340,4 @@ export const CommunityHikes: React.FC<CommunityHikesProps> = ({ onShowHikeOnMap 
     </div>
   );
 };
+

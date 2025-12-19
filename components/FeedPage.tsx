@@ -235,3 +235,4 @@ export const FeedPage: React.FC<FeedPageProps> = ({ onShowHikeOnMap }) => {
     </div>
   );
 };
+

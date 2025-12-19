@@ -38,3 +38,4 @@ CREATE TRIGGER update_hike_comments_updated_at
   BEFORE UPDATE ON hike_comments
   FOR EACH ROW
   EXECUTE FUNCTION update_updated_at_column();
+

@@ -198,3 +198,4 @@ USING (
   bucket_id = 'avatars' 
   AND (select auth.uid())::text = (storage.foldername(name))[1]
 );
+

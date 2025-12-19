@@ -87,3 +87,4 @@ Après avoir exécuté le script, vérifiez que :
 - Le script est **idempotent** : vous pouvez l'exécuter plusieurs fois sans problème
 - Les triggers seront recréés automatiquement
 - Aucune perte de données : seules les métadonnées de la fonction sont modifiées
+

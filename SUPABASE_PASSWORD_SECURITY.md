@@ -207,3 +207,4 @@ Si vous êtes sur le plan Free et ne pouvez pas activer cette fonctionnalité, v
 - [Documentation Supabase - Password Security](https://supabase.com/docs/guides/auth/password-security)
 - [Supabase Pricing](https://supabase.com/pricing)
 - [Support Supabase](https://supabase.com/support)
+

@@ -382,3 +382,4 @@ export const fetchPopularHikes = async (limit: number = 10): Promise<HikeData[]>
     return [];
   }
 };
+
