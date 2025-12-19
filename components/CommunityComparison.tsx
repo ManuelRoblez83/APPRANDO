@@ -69,15 +69,15 @@ export const CommunityComparison: React.FC<CommunityComparisonProps> = ({ userHi
     );
   }
 
-  const { userHistory, communityAverages, comparison: comp } = comparison;
+  const { userHistory: userHistoryData, communityAverages, comparison: comp } = comparison;
 
   // Calculer les moyennes mensuelles de l'utilisateur
-  const userAverageMonthlyDistance = userHistory.dataPoints.length > 0
-    ? userHistory.dataPoints.reduce((sum, dp) => sum + dp.distance, 0) / userHistory.dataPoints.length
+  const userAverageMonthlyDistance = userHistoryData.dataPoints.length > 0
+    ? userHistoryData.dataPoints.reduce((sum, dp) => sum + dp.distance, 0) / userHistoryData.dataPoints.length
     : 0;
 
-  const userAverageHikesPerMonth = userHistory.dataPoints.length > 0
-    ? userHistory.dataPoints.reduce((sum, dp) => sum + dp.hikeCount, 0) / userHistory.dataPoints.length
+  const userAverageHikesPerMonth = userHistoryData.dataPoints.length > 0
+    ? userHistoryData.dataPoints.reduce((sum, dp) => sum + dp.hikeCount, 0) / userHistoryData.dataPoints.length
     : 0;
 
   const renderComparisonCard = (
@@ -204,7 +204,7 @@ export const CommunityComparison: React.FC<CommunityComparisonProps> = ({ userHi
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {renderComparisonCard(
           'Distance par randonnée',
-          userHistory.averageDistance,
+          userHistoryData.averageDistance,
           communityAverages.averageDistance,
           'km',
           comp.distanceVsAverage,
@@ -212,7 +212,7 @@ export const CommunityComparison: React.FC<CommunityComparisonProps> = ({ userHi
         )}
         {renderComparisonCard(
           'Dénivelé par randonnée',
-          userHistory.averageAscent,
+          userHistoryData.averageAscent,
           communityAverages.averageAscent,
           'm',
           comp.ascentVsAverage,
